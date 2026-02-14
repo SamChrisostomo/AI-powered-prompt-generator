@@ -1,35 +1,43 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { usePromptGenerator } from './hooks/usePromptGenerator';
 import { PromptMode, DetailLevel, OutputFormat } from './models/Prompt';
 import { supabase } from './config/supabase';
 import { SparklesIcon, BrainCircuitIcon, ClipboardIcon, ClipboardCheckIcon, BoltIcon, HistoryIcon, TrashIcon, CodeBracketIcon, BugAntIcon, ArrowPathIcon, DocumentTextIcon, TableCellsIcon, HashtagIcon, BeakerIcon, PencilSquareIcon, TerminalIcon, Square2StackIcon, WandSparklesIcon } from './components/Icons';
 import type { IconProps } from './components/Icons';
 import { Accordion } from './components/Accordion';
+import { AuthModal } from './components/AuthModal';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-const Auth: React.FC<{ user: ReturnType<typeof usePromptGenerator>['user'] }> = ({ user }) => {
-    const handleLogin = async () => {
-        await supabase.auth.signInWithOAuth({ provider: 'google' });
-    };
-
+const Auth: React.FC<{ 
+    user: ReturnType<typeof usePromptGenerator>['user'],
+    onLoginClick: () => void,
+ }> = ({ user, onLoginClick }) => {
+    
     const handleLogout = async () => {
         await supabase.auth.signOut();
     };
 
     if (user) {
+        const avatarUrl = user.user_metadata?.avatar_url;
         return (
             <div className="flex items-center gap-4">
-                <img src={user.user_metadata.avatar_url} alt="User avatar" className="w-10 h-10 rounded-full" />
+                 {avatarUrl ? (
+                   <img src={avatarUrl} alt="User avatar" className="w-10 h-10 rounded-full" />
+                ) : (
+                   <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-lg ring-2 ring-purple-400">
+                     {user.email?.charAt(0).toUpperCase()}
+                   </div>
+                )}
                 <button onClick={handleLogout} className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Logout</button>
             </div>
         );
     }
 
     return (
-        <button onClick={handleLogin} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-            Login com Google
+        <button onClick={onLoginClick} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+            Login / Registrar
         </button>
     );
 };
@@ -61,6 +69,7 @@ const App: React.FC = () => {
     groupSelectedHistory,
     handleGenerateCompositePrompt,
   } = usePromptGenerator();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   
   const getModePlaceholder = (): string => {
     switch(promptMode) {
@@ -270,7 +279,7 @@ const App: React.FC = () => {
               Transforme ideias em prompts poderosos para IAs de desenvolvimento.
             </p>
         </div>
-        <Auth user={user} />
+        <Auth user={user} onLoginClick={() => setIsAuthModalOpen(true)} />
       </header>
 
       {/* Desktop Layout */}
@@ -321,6 +330,8 @@ const App: React.FC = () => {
             {historyPanelContent}
           </Accordion>
       </main>
+      
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   );
 };
