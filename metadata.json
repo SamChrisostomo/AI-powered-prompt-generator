@@ -1,0 +1,5 @@
+{
+  "name": "Gerador de Prompt Estruturado com IA",
+  "description": "Um aplicativo simples para converter a entrada do usuário em um prompt bem estruturado para ser usado em IAs de desenvolvimento, aprimorado com a inteligência do Gemini para criar prompts mais eficazes.",
+  "requestFramePermissions": []
+}
