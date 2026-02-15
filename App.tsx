@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { usePromptGenerator } from './hooks/usePromptGenerator';
 import { PromptMode, DetailLevel, OutputFormat } from './models/Prompt';
 import { supabase } from './config/supabase';
-import { SparklesIcon, BrainCircuitIcon, ClipboardIcon, ClipboardCheckIcon, BoltIcon, HistoryIcon, TrashIcon, CodeBracketIcon, BugAntIcon, ArrowPathIcon, DocumentTextIcon, TableCellsIcon, HashtagIcon, BeakerIcon, PencilSquareIcon, TerminalIcon, Square2StackIcon, WandSparklesIcon } from './components/Icons';
+import { SparklesIcon, BrainCircuitIcon, ClipboardIcon, ClipboardCheckIcon, BoltIcon, HistoryIcon, TrashIcon, CodeBracketIcon, BugAntIcon, ArrowPathIcon, DocumentTextIcon, TableCellsIcon, HashtagIcon, BeakerIcon, PencilSquareIcon, TerminalIcon, Square2StackIcon, WandSparklesIcon, BookmarkIcon } from './components/Icons';
 import type { IconProps } from './components/Icons';
 import { Accordion } from './components/Accordion';
 import { AuthModal } from './components/AuthModal';
+import { SavePresetModal } from './components/SavePresetModal';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -68,8 +69,14 @@ const App: React.FC = () => {
     deleteSelectedHistory,
     groupSelectedHistory,
     handleGenerateCompositePrompt,
+    presets,
+    handleSavePreset,
+    handleLoadPreset,
+    handleDeletePreset,
   } = usePromptGenerator();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isSavePresetModalOpen, setIsSavePresetModalOpen] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
   
   const getModePlaceholder = (): string => {
     switch(promptMode) {
@@ -107,6 +114,26 @@ const App: React.FC = () => {
     }
   }
 
+  const onSavePreset = async (name: string) => {
+    await handleSavePreset(name);
+    setIsSavePresetModalOpen(false);
+  }
+
+  const onSelectPreset = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const presetId = e.target.value;
+    setSelectedPreset(presetId);
+    if(presetId) {
+        handleLoadPreset(presetId);
+    }
+  }
+
+  const onDeletePreset = () => {
+    if(selectedPreset) {
+        handleDeletePreset(selectedPreset);
+        setSelectedPreset('');
+    }
+  }
+
   const inputPanelContent = (
     <>
       <div className="mb-4">
@@ -132,6 +159,36 @@ const App: React.FC = () => {
           Por favor, insira uma descrição para o seu prompt.
         </p>
       )}
+
+      {user && (
+         <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-3 text-slate-200 flex items-center gap-2">
+                <BookmarkIcon className="w-5 h-5" />
+                Presets de Configuração
+            </h3>
+            <div className="bg-slate-900/70 border border-slate-700 rounded-lg p-3 flex flex-col sm:flex-row gap-2 items-center">
+                <select 
+                    value={selectedPreset}
+                    onChange={onSelectPreset}
+                    className="w-full sm:flex-1 bg-slate-800 border border-slate-600 rounded-md p-2 text-slate-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                >
+                    <option value="">Carregar um preset...</option>
+                    {presets.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                <div className="w-full sm:w-auto flex gap-2">
+                    {selectedPreset && (
+                        <button onClick={onDeletePreset} className="w-full sm:w-auto px-3 py-2 text-sm bg-red-800/50 hover:bg-red-700/50 text-red-300 font-medium rounded-md transition-colors flex items-center justify-center gap-1">
+                            <TrashIcon className="w-4 h-4" />
+                        </button>
+                    )}
+                    <button onClick={() => setIsSavePresetModalOpen(true)} className="w-full sm:w-auto px-4 py-2 text-sm bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-md transition-colors">
+                        Salvar Atual
+                    </button>
+                </div>
+            </div>
+         </div>
+      )}
+      
       <div className="mt-6 space-y-4">
         <div className="bg-slate-900/70 border border-slate-700 rounded-lg p-4">
           <h3 className="text-lg font-semibold mb-3 text-slate-200">Personalizar Saída</h3>
@@ -332,6 +389,7 @@ const App: React.FC = () => {
       </main>
       
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <SavePresetModal isOpen={isSavePresetModalOpen} onClose={() => setIsSavePresetModalOpen(false)} onSave={onSavePreset} />
     </div>
   );
 };

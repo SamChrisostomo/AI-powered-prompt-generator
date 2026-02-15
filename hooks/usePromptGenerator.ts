@@ -3,7 +3,9 @@ import { useState, useCallback, useEffect } from 'react';
 import { generateStructuredPrompt, generateCompositeStructuredPrompt } from '../services/promptService';
 import { getHistory, addHistoryItem, deleteHistoryItems, clearAllHistory } from '../repositories/historyRepository';
 import { getSettings, saveSettings } from '../repositories/settingsRepository';
+import { getPresets, addPreset, deletePreset } from '../repositories/presetRepository';
 import { HistoryItem } from '../models/History';
+import { Preset } from '../models/Preset';
 import { PromptOptions, PromptMode, DetailLevel, OutputFormat } from '../models/Prompt';
 import { supabase } from '../config/supabase';
 import type { User } from '@supabase/supabase-js';
@@ -28,6 +30,7 @@ export const usePromptGenerator = () => {
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('markdown');
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
+  const [presets, setPresets] = useState<Preset[]>([]);
   
   // Auth listener
   useEffect(() => {
@@ -55,8 +58,10 @@ export const usePromptGenerator = () => {
           setOutputFormat(settings.outputFormat);
         }
       });
+      getPresets(user.id).then(setPresets);
     } else {
       setHistory([]);
+      setPresets([]);
     }
   }, [user]);
 
@@ -198,6 +203,39 @@ export const usePromptGenerator = () => {
     setActivePanel('input');
   };
 
+  const handleSavePreset = async (name: string) => {
+    if (!user) return;
+    const presetData = {
+      name,
+      promptMode,
+      detailLevel,
+      outputFormat,
+      includeComments,
+      isAdvancedMode,
+    };
+    const newPreset = await addPreset(user.id, presetData);
+    if (newPreset) {
+        setPresets(prev => [...prev, newPreset]);
+    }
+  };
+
+  const handleLoadPreset = (presetId: string) => {
+    const preset = presets.find(p => p.id === presetId);
+    if (preset) {
+        setPromptMode(preset.promptMode);
+        setDetailLevel(preset.detailLevel);
+        setOutputFormat(preset.outputFormat);
+        setIncludeComments(preset.includeComments);
+        setIsAdvancedMode(preset.isAdvancedMode);
+    }
+  };
+
+  const handleDeletePreset = async (presetId: string) => {
+    if (!user) return;
+    await deletePreset(user.id, presetId);
+    setPresets(prev => prev.filter(p => p.id !== presetId));
+  };
+
   return {
     user,
     userInput, setUserInput,
@@ -223,5 +261,9 @@ export const usePromptGenerator = () => {
     deleteSelectedHistory,
     groupSelectedHistory,
     handleGenerateCompositePrompt,
+    presets,
+    handleSavePreset,
+    handleLoadPreset,
+    handleDeletePreset,
   };
 };

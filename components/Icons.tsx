@@ -119,3 +119,9 @@ export const WandSparklesIcon: React.FC<IconProps> = ({ className }) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 15l.813-.904m-2.826.904L6 15l.813-.904M9.813 15.904L12 13.5l2.187 2.404m-4.374 0l.281.311.281-.311m-2.286 2.05L9 18l.813.904m-2.826-.904L6 18l.813.904M9.813 15.904L12 18.309l2.187-2.405m-4.374 0l.281.31.281-.31m2.286-2.05L12 15.19l2.187-2.405m-4.374 0l.281.31.281-.31M12 9a.75.75 0 01.75.75v.008a.75.75 0 01-1.5 0V9.75A.75.75 0 0112 9zm-5.25 3a.75.75 0 01.75.75v.008a.75.75 0 01-1.5 0v-.008a.75.75 0 01.75-.75zm10.5 0a.75.75 0 01.75.75v.008a.75.75 0 01-1.5 0v-.008a.75.75 0 01.75-.75z" />
     </svg>
 );
+
+export const BookmarkIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c.1.121.1.287.1.43V21L12 17.5 6.307 21V3.752c0-.143.001-.296.002-.437a1.5 1.5 0 011.5-1.5h8.384c.4 0 .768.158 1.04.407z" />
+    </svg>
+);
