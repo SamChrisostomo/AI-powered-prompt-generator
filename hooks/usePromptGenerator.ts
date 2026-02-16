@@ -28,7 +28,7 @@ export const usePromptGenerator = () => {
   const [activePanel, setActivePanel] = useState<ActivePanel>('input');
   const [isInputInvalid, setIsInputInvalid] = useState<boolean>(false);
 
-  const clearError = () => setError(null);
+  const clearError = useCallback(() => setError(null), []);
 
   const handleGeneratePrompt = useCallback(async (textToGenerate: string) => {
     if (!textToGenerate.trim()) {
@@ -130,24 +130,24 @@ export const usePromptGenerator = () => {
     }
   }, [userInput]);
 
-  const loadFromHistory = (item: HistoryItem) => {
+  const loadFromHistory = useCallback((item: HistoryItem) => {
     setUserInput(item.userInput);
     setStructuredPrompt(item.structuredPrompt);
     settings.setPromptMode(item.mode);
     setIsInputInvalid(false);
     setActivePanel('input');
-  };
+  }, [settings.setPromptMode]);
 
-  const groupSelectedHistory = () => {
+  const groupSelectedHistory = useCallback(() => {
       const combinedText = getCombinedHistoryText();
       if (combinedText) {
           setUserInput(combinedText);
           clearSelection();
           setActivePanel('input');
       }
-  };
+  }, [getCombinedHistoryText, clearSelection]);
 
-  const handleSavePreset = async (name: string) => {
+  const handleSavePreset = useCallback(async (name: string) => {
     await savePreset(name, {
         promptMode: settings.promptMode,
         detailLevel: settings.detailLevel,
@@ -157,30 +157,30 @@ export const usePromptGenerator = () => {
         temperature: settings.temperature,
         topK: settings.topK,
     });
-  };
+  }, [savePreset, settings]);
 
-  const handleLoadPreset = (presetId: string) => {
+  const handleLoadPreset = useCallback((presetId: string) => {
     const preset = getPresetById(presetId);
     if (preset) {
         settings.applyPresetSettings(preset);
     }
-  };
+  }, [getPresetById, settings]);
 
-  const handleClearFields = () => {
+  const handleClearFields = useCallback(() => {
     setUserInput('');
     setStructuredPrompt('');
     settings.resetSettings();
     setError(null);
     setIsInputInvalid(false);
-  };
+  }, [settings.resetSettings]);
 
-  const insertSnippet = (content: string) => {
+  const insertSnippet = useCallback((content: string) => {
       setUserInput(prev => {
           const separator = prev.length > 0 && !prev.endsWith('\n') ? '\n\n' : '';
           return prev + separator + content;
       });
       toast.success("Snippet inserido!", { icon: '📝' });
-  };
+  }, []);
 
   return {
     user,
