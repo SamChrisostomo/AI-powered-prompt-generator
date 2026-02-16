@@ -1,6 +1,4 @@
-
 import React from 'react';
-import { usePromptGenerator } from '../hooks/usePromptGenerator';
 import { useHistory } from '../hooks/useHistory';
 import { HistoryItem } from '../models/History';
 import { TrashIcon, Square2StackIcon, WandSparklesIcon } from './Icons';
@@ -9,6 +7,7 @@ import * as ReactWindow from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useDestructiveAction } from '../hooks/useDestructiveAction';
 import { ConfirmationModal } from './ConfirmationModal';
+import { User } from '@supabase/supabase-js';
 
 interface ListChildComponentProps<T = any> {
     index: number;
@@ -20,7 +19,10 @@ const FixedSizeList = (ReactWindow as any).FixedSizeList || (ReactWindow as any)
 const VirtualizedAutoSizer = AutoSizer as any;
 
 type HistoryPanelProps = {
-    promptGenerator: Pick<ReturnType<typeof usePromptGenerator>, 'user' | 'loadFromHistory' | 'handleGenerateCompositePrompt' | 'groupSelectedHistory'>;
+    user: User | null;
+    loadFromHistory: (item: HistoryItem) => void;
+    groupSelectedHistory: () => void;
+    handleGenerateCompositePrompt: () => void;
 };
 
 // --- Actions Component ---
@@ -89,8 +91,7 @@ const HistoryRow = React.memo(({ index, style, data }: ListChildComponentProps<R
 });
 
 
-export const HistoryPanel = React.memo(({ promptGenerator }: HistoryPanelProps) => {
-    const { user, loadFromHistory, groupSelectedHistory, handleGenerateCompositePrompt } = promptGenerator;
+export const HistoryPanel = React.memo(({ user, loadFromHistory, groupSelectedHistory, handleGenerateCompositePrompt }: HistoryPanelProps) => {
     // FETCHING OWN DATA
     const { history, selectedHistoryIds, toggleHistorySelection, deleteHistoryItem, deleteSelectedHistory, clearHistory } = useHistory();
 

@@ -1,6 +1,8 @@
-
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
+import { usePromptContext } from './context/PromptContext';
 import { usePromptGenerator } from './hooks/usePromptGenerator';
+import { useAuth } from './hooks/useAuth';
+import { useSettings } from './hooks/useSettings';
 import { useHistory } from './hooks/useHistory';
 import { usePresets } from './hooks/usePresets';
 import { SparklesIcon, HistoryIcon, PencilSquareIcon, TerminalIcon, ClipboardIcon, ClipboardCheckIcon, XCircleIcon } from './components/Icons';
@@ -12,8 +14,9 @@ import { HistoryPanel, HistoryActions } from './components/HistoryPanel';
 import { appTexts } from './data/texts';
 import { ThemeSwitcher } from './components/ThemeSwitcher';
 import { Toaster, toast } from 'react-hot-toast';
+import { HistoryItem } from './models/History';
 
-// Code Splitting: Lazy load components that are not immediately visible or heavy
+// Code Splitting
 const AuthModal = React.lazy(() => import('./components/AuthModal').then(module => ({ default: module.AuthModal })));
 const SavePresetModal = React.lazy(() => import('./components/SavePresetModal').then(module => ({ default: module.SavePresetModal })));
 const ProfileManagement = React.lazy(() => import('./components/ProfileManagement').then(module => ({ default: module.ProfileManagement })));
@@ -23,40 +26,42 @@ type View = 'main' | 'profile';
 const LoadingFallback = () => <div className="p-4 flex justify-center"><svg className="animate-spin h-6 w-6 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>;
 
 const App: React.FC = () => {
-  const promptGenerator = usePromptGenerator();
-  const { 
-    user, 
-    isLoading,
-    error,
-    clearError,
-    handleLoadPreset, 
-    handleClearFields,
-    groupSelectedHistory,
-    handleGenerateCompositePrompt,
-    theme,
-    setTheme,
-    structuredPrompt,
-    handleCopyToClipboard,
-    isCopied
-  } = promptGenerator;
+  // 1. Hooks Initialization (Decomposed)
+  const promptContext = usePromptContext();
+  const auth = useAuth();
+  const settings = useSettings();
+  const historyHook = useHistory();
+  const presetsHook = usePresets();
+  const generator = usePromptGenerator();
 
-  // Independent hooks for App actions
-  const { deleteSelectedHistory, clearHistory, history, selectedHistoryIds } = useHistory();
-  const { removePreset } = usePresets();
-  
+  // 2. Destructuring for easier access
+  const { user } = auth;
+  const { 
+    userInput, setUserInput, 
+    structuredPrompt, setStructuredPrompt,
+    activePanel, setActivePanel,
+    isInputInvalid, setIsInputInvalid,
+    isCopied, setIsCopied
+  } = promptContext;
+  const { isLoading, error, clearError, handleGeneratePrompt, handleGenerateCompositePrompt, handleOptimizeInput, isOptimizing } = generator;
+  const { history, selectedHistoryIds, getCombinedHistoryText, clearSelection, deleteSelectedHistory, clearHistory } = historyHook;
+  const { savePreset, removePreset, getPresetById } = presetsHook;
+  const { resetSettings, theme, setTheme, setPromptMode, applyPresetSettings } = settings;
+
+  // 3. Local State for View Logic
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSavePresetModalOpen, setIsSavePresetModalOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<string>('');
   const [isDesktopInputOpen, setIsDesktopInputOpen] = useState(true);
   const [view, setView] = useState<View>('main');
 
+  // 4. Effects
   useEffect(() => {
     if (isLoading) {
         setIsDesktopInputOpen(false);
     }
   }, [isLoading]);
 
-  // Global Error Handling via Toast
   useEffect(() => {
     if (error) {
         toast.error(error);
@@ -64,21 +69,33 @@ const App: React.FC = () => {
     }
   }, [error, clearError]);
 
-  // Reset to main view if user logs out
   useEffect(() => {
     if (!user && view === 'profile') {
         setView('main');
     }
   }, [user, view]);
 
-  const onSelectPreset = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  // 5. Orchestration Functions (The "Controller" logic)
+  
+  const handleCopyToClipboard = useCallback(() => {
+    if (structuredPrompt) {
+      navigator.clipboard.writeText(structuredPrompt);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  }, [structuredPrompt, setIsCopied]);
+
+  const onSelectPreset = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const presetId = e.target.value;
     setSelectedPreset(presetId);
     if(presetId) {
-        handleLoadPreset(presetId);
-        toast.success("Preset carregado!");
+        const preset = getPresetById(presetId);
+        if (preset) {
+            applyPresetSettings(preset);
+            toast.success("Preset carregado!");
+        }
     }
-  }
+  }, [getPresetById, applyPresetSettings]);
 
   const onDeletePreset = async () => {
     if(selectedPreset) {
@@ -86,17 +103,59 @@ const App: React.FC = () => {
         setSelectedPreset('');
         toast.success("Preset removido.");
     }
-  }
+  };
 
-  const onClearFields = () => {
-    handleClearFields();
+  const onSavePreset = async (name: string) => {
+    await savePreset(name, {
+        promptMode: settings.promptMode,
+        detailLevel: settings.detailLevel,
+        outputFormat: settings.outputFormat,
+        includeComments: settings.includeComments,
+        isAdvancedMode: settings.isAdvancedMode,
+        temperature: settings.temperature,
+        topK: settings.topK,
+    });
+  };
+
+  const handleClearFields = useCallback(() => {
+    setUserInput('');
+    setStructuredPrompt('');
+    resetSettings();
+    clearError();
+    setIsInputInvalid(false);
     setSelectedPreset('');
     toast('Campos limpos', { icon: '🧹' });
-  }
+  }, [setUserInput, setStructuredPrompt, resetSettings, clearError, setIsInputInvalid]);
+
+  const loadFromHistory = useCallback((item: HistoryItem) => {
+    setUserInput(item.userInput);
+    setStructuredPrompt(item.structuredPrompt);
+    setPromptMode(item.mode);
+    setIsInputInvalid(false);
+    setActivePanel('input');
+  }, [setUserInput, setStructuredPrompt, setPromptMode, setIsInputInvalid, setActivePanel]);
+
+  const groupSelectedHistory = useCallback(() => {
+      const combinedText = getCombinedHistoryText();
+      if (combinedText) {
+          setUserInput(combinedText);
+          clearSelection();
+          setActivePanel('input');
+      }
+  }, [getCombinedHistoryText, setUserInput, clearSelection, setActivePanel]);
+  
+  const insertSnippet = useCallback((content: string) => {
+      setUserInput(prev => {
+          const separator = prev.length > 0 && !prev.endsWith('\n') ? '\n\n' : '';
+          return prev + separator + content;
+      });
+      toast.success("Snippet inserido!", { icon: '📝' });
+  }, [setUserInput]);
+
 
   const clearFieldsButton = (
     <button 
-        onClick={(e) => { e.stopPropagation(); onClearFields(); }}
+        onClick={(e) => { e.stopPropagation(); handleClearFields(); }}
         className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1 focus:outline-none"
         title="Limpar todos os campos"
     >
@@ -104,6 +163,26 @@ const App: React.FC = () => {
         <span className="hidden sm:inline">Limpar</span>
     </button>
   );
+
+  // Construct "Composite Props" to pass down (Adapter Pattern to minimize child component refactor)
+  const inputPanelProps = {
+      user,
+      userInput, setUserInput,
+      isLoading, isOptimizing,
+      isInputInvalid, setIsInputInvalid,
+      handleGeneratePrompt,
+      handleOptimizeInput,
+      insertSnippet,
+      // Settings
+      ...settings
+  };
+
+  const historyPanelProps = {
+      user,
+      loadFromHistory,
+      groupSelectedHistory,
+      handleGenerateCompositePrompt: () => handleGenerateCompositePrompt(selectedHistoryIds)
+  };
   
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
@@ -144,7 +223,7 @@ const App: React.FC = () => {
                         headerContent={clearFieldsButton}
                     >
                         <InputPanel 
-                            promptGenerator={promptGenerator}
+                            {...inputPanelProps}
                             onSavePresetClick={() => setIsSavePresetModalOpen(true)}
                             selectedPreset={selectedPreset}
                             onSelectedPresetChange={onSelectPreset}
@@ -181,7 +260,6 @@ const App: React.FC = () => {
                                 )}
                             </button>
                         </div>
-                        {/* Optimized Prop Passing for Memoization */}
                         <OutputPanel structuredPrompt={structuredPrompt} isLoading={isLoading} />
                     </div>
                 </div>
@@ -191,10 +269,13 @@ const App: React.FC = () => {
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"><HistoryIcon className="w-6 h-6" /> {appTexts.historyTitle}</h2>
                         {selectedHistoryIds.length > 0 
-                            ? <HistoryActions groupSelectedHistory={groupSelectedHistory} handleGenerateCompositePrompt={handleGenerateCompositePrompt} deleteSelectedHistory={deleteSelectedHistory} /> 
+                            ? <HistoryActions 
+                                groupSelectedHistory={groupSelectedHistory} 
+                                handleGenerateCompositePrompt={() => handleGenerateCompositePrompt(selectedHistoryIds)} 
+                                deleteSelectedHistory={deleteSelectedHistory} /> 
                             : (history && history.length > 0 && user && <button onClick={() => clearHistory()} className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1"><XCircleIcon className="w-4 h-4" /> Limpar Histórico Completo</button>)}
                     </div>
-                    <HistoryPanel promptGenerator={promptGenerator} />
+                    <HistoryPanel {...historyPanelProps} />
                 </div>
             </main>
 
@@ -203,12 +284,12 @@ const App: React.FC = () => {
                 <Accordion 
                     title={appTexts.inputPanelTitle} 
                     icon={<PencilSquareIcon className="w-6 h-6"/>}
-                    isOpen={promptGenerator.activePanel === 'input'}
-                    onToggle={() => promptGenerator.setActivePanel('input')}
+                    isOpen={activePanel === 'input'}
+                    onToggle={() => setActivePanel('input')}
                     headerContent={clearFieldsButton}
                 >
                     <InputPanel 
-                        promptGenerator={promptGenerator}
+                        {...inputPanelProps}
                         onSavePresetClick={() => setIsSavePresetModalOpen(true)}
                         selectedPreset={selectedPreset}
                         onSelectedPresetChange={onSelectPreset}
@@ -218,8 +299,8 @@ const App: React.FC = () => {
                 <Accordion 
                     title={appTexts.outputPanelTitle}
                     icon={<TerminalIcon className="w-6 h-6"/>}
-                    isOpen={promptGenerator.activePanel === 'output'}
-                    onToggle={() => promptGenerator.setActivePanel('output')}
+                    isOpen={activePanel === 'output'}
+                    onToggle={() => setActivePanel('output')}
                     headerContent={
                         <button
                             onClick={(e) => { e.stopPropagation(); handleCopyToClipboard(); }}
@@ -243,13 +324,16 @@ const App: React.FC = () => {
                 <Accordion
                     title={appTexts.historyPanelTitle}
                     icon={<HistoryIcon className="w-6 h-6"/>}
-                    isOpen={promptGenerator.activePanel === 'history'}
-                    onToggle={() => promptGenerator.setActivePanel('history')}
+                    isOpen={activePanel === 'history'}
+                    onToggle={() => setActivePanel('history')}
                     headerContent={selectedHistoryIds.length > 0 
-                        ? <HistoryActions groupSelectedHistory={groupSelectedHistory} handleGenerateCompositePrompt={handleGenerateCompositePrompt} deleteSelectedHistory={deleteSelectedHistory} /> 
+                        ? <HistoryActions 
+                            groupSelectedHistory={groupSelectedHistory} 
+                            handleGenerateCompositePrompt={() => handleGenerateCompositePrompt(selectedHistoryIds)} 
+                            deleteSelectedHistory={deleteSelectedHistory} /> 
                         : (history && history.length > 0 && user && <button onClick={(e) => { e.stopPropagation(); clearHistory(); }} className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1"><XCircleIcon className="w-4 h-4" /> Limpar Histórico Completo</button>)}
                 >
-                    <HistoryPanel promptGenerator={promptGenerator} />
+                    <HistoryPanel {...historyPanelProps} />
                 </Accordion>
             </main>
         </>
@@ -257,7 +341,7 @@ const App: React.FC = () => {
           <main className="w-full max-w-screen-2xl flex-grow">
             {user && (
                 <Suspense fallback={<LoadingFallback />}>
-                    <ProfileManagement promptGenerator={promptGenerator} onBack={() => setView('main')} />
+                    <ProfileManagement auth={auth} onBack={() => setView('main')} />
                 </Suspense>
             )}
           </main>
@@ -265,7 +349,7 @@ const App: React.FC = () => {
       
       <Suspense fallback={null}>
         {isAuthModalOpen && <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />}
-        {isSavePresetModalOpen && <SavePresetModal isOpen={isSavePresetModalOpen} onClose={() => setIsSavePresetModalOpen(false)} onSave={promptGenerator.handleSavePreset} />}
+        {isSavePresetModalOpen && <SavePresetModal isOpen={isSavePresetModalOpen} onClose={() => setIsSavePresetModalOpen(false)} onSave={onSavePreset} />}
       </Suspense>
     </div>
   );

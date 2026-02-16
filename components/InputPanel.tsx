@@ -1,6 +1,6 @@
-
 import React from 'react';
-import { usePromptGenerator } from '../hooks/usePromptGenerator';
+import { useSettings } from '../hooks/useSettings';
+import { User } from '@supabase/supabase-js';
 import { DetailLevel, OutputFormat } from '../models/Prompt';
 import { BrainCircuitIcon, BoltIcon, Cog6ToothIcon } from './Icons';
 import { UserInputTextarea } from './UserInputTextarea';
@@ -11,8 +11,20 @@ import { PresetManager } from './PresetManager';
 import { SnippetLibrary } from './SnippetLibrary';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 
-interface InputPanelProps {
-    promptGenerator: ReturnType<typeof usePromptGenerator>;
+// Defining a composite interface that matches what App.tsx passes
+interface InputPanelProps extends ReturnType<typeof useSettings> {
+    user: User | null;
+    userInput: string;
+    setUserInput: (value: string) => void;
+    isLoading: boolean;
+    isOptimizing: boolean;
+    isInputInvalid: boolean;
+    setIsInputInvalid: (val: boolean) => void;
+    handleGeneratePrompt: (input: string) => void;
+    handleOptimizeInput: () => void;
+    insertSnippet: (content: string) => void;
+    
+    // Preset props
     onSavePresetClick: () => void;
     selectedPreset: string;
     onSelectedPresetChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
@@ -20,28 +32,25 @@ interface InputPanelProps {
 }
 
 export const InputPanel: React.FC<InputPanelProps> = ({
-    promptGenerator,
+    user,
+    userInput, setUserInput,
+    isLoading, isOptimizing,
+    isAdvancedMode, setIsAdvancedMode,
+    isInputInvalid, setIsInputInvalid,
+    promptMode, setPromptMode,
+    includeComments, setIncludeComments,
+    detailLevel, setDetailLevel,
+    outputFormat, setOutputFormat,
+    handleGeneratePrompt,
+    handleOptimizeInput,
+    temperature, setTemperature,
+    topK, setTopK,
+    insertSnippet,
     onSavePresetClick,
     selectedPreset,
     onSelectedPresetChange,
     onDeletePreset,
 }) => {
-    const {
-        user,
-        userInput, setUserInput,
-        isLoading, isOptimizing,
-        isAdvancedMode, setIsAdvancedMode,
-        isInputInvalid, setIsInputInvalid,
-        promptMode, setPromptMode,
-        includeComments, setIncludeComments,
-        detailLevel, setDetailLevel,
-        outputFormat, setOutputFormat,
-        handleGeneratePrompt,
-        handleOptimizeInput,
-        temperature, setTemperature,
-        topK, setTopK,
-        insertSnippet
-    } = promptGenerator;
     
     const [modeListRef] = useAutoAnimate();
 

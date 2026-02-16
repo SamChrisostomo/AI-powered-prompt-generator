@@ -1,32 +1,27 @@
-
 import { useState, useCallback } from 'react';
 import { generateStructuredPrompt, generateCompositeStructuredPrompt } from '../services/promptService';
 import { optimizeUserInput } from '../services/geminiService';
 import { PromptOptions } from '../models/Prompt';
-import { HistoryItem } from '../models/History';
-
 import { useAuth } from './useAuth';
 import { useSettings } from './useSettings';
 import { useHistory } from './useHistory';
-import { usePresets } from './usePresets';
-import toast from 'react-hot-toast';
-
-type ActivePanel = 'input' | 'output' | 'history';
+import { usePromptContext } from '../context/PromptContext';
 
 export const usePromptGenerator = () => {
-  const { user, profileLoading, profileError, profileSuccess, updateUserProfile, deleteUserAccount, resetProfileMessages } = useAuth();
+  const { user } = useAuth();
   const settings = useSettings();
-  const { addToHistory, clearSelection, getCombinedHistoryText, selectedHistoryIds, history } = useHistory();
-  const { savePreset, getPresetById } = usePresets();
+  const { addToHistory, clearSelection, history } = useHistory();
+  const { 
+      userInput, setUserInput, 
+      setStructuredPrompt, 
+      setIsInputInvalid, 
+      setIsCopied, 
+      setActivePanel 
+  } = usePromptContext();
 
-  const [userInput, setUserInput] = useState<string>('');
-  const [structuredPrompt, setStructuredPrompt] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isOptimizing, setIsOptimizing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isCopied, setIsCopied] = useState<boolean>(false);
-  const [activePanel, setActivePanel] = useState<ActivePanel>('input');
-  const [isInputInvalid, setIsInputInvalid] = useState<boolean>(false);
 
   const clearError = useCallback(() => setError(null), []);
 
@@ -66,9 +61,9 @@ export const usePromptGenerator = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, settings, addToHistory]);
+  }, [user, settings, addToHistory, setIsInputInvalid, setStructuredPrompt, setIsCopied, setActivePanel]);
   
-  const handleGenerateCompositePrompt = useCallback(async () => {
+  const handleGenerateCompositePrompt = useCallback(async (selectedHistoryIds: string[]) => {
     if (selectedHistoryIds.length < 2) {
       setError("Selecione ao menos dois itens para gerar um prompt composto.");
       return;
@@ -107,16 +102,8 @@ export const usePromptGenerator = () => {
         setIsLoading(false);
         clearSelection();
     }
-  }, [user, selectedHistoryIds, history, settings, addToHistory, clearSelection]);
+  }, [user, history, settings, addToHistory, clearSelection, setIsInputInvalid, setStructuredPrompt, setIsCopied, setActivePanel]);
 
-  const handleCopyToClipboard = useCallback(() => {
-    if (structuredPrompt) {
-      navigator.clipboard.writeText(structuredPrompt);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    }
-  }, [structuredPrompt]);
-  
   const handleOptimizeInput = useCallback(async () => {
     if (!userInput.trim()) return;
     setIsOptimizing(true);
@@ -128,96 +115,15 @@ export const usePromptGenerator = () => {
     } finally {
       setIsOptimizing(false);
     }
-  }, [userInput]);
-
-  const loadFromHistory = useCallback((item: HistoryItem) => {
-    setUserInput(item.userInput);
-    setStructuredPrompt(item.structuredPrompt);
-    settings.setPromptMode(item.mode);
-    setIsInputInvalid(false);
-    setActivePanel('input');
-  }, [settings.setPromptMode]);
-
-  const groupSelectedHistory = useCallback(() => {
-      const combinedText = getCombinedHistoryText();
-      if (combinedText) {
-          setUserInput(combinedText);
-          clearSelection();
-          setActivePanel('input');
-      }
-  }, [getCombinedHistoryText, clearSelection]);
-
-  const handleSavePreset = useCallback(async (name: string) => {
-    await savePreset(name, {
-        promptMode: settings.promptMode,
-        detailLevel: settings.detailLevel,
-        outputFormat: settings.outputFormat,
-        includeComments: settings.includeComments,
-        isAdvancedMode: settings.isAdvancedMode,
-        temperature: settings.temperature,
-        topK: settings.topK,
-    });
-  }, [savePreset, settings]);
-
-  const handleLoadPreset = useCallback((presetId: string) => {
-    const preset = getPresetById(presetId);
-    if (preset) {
-        settings.applyPresetSettings(preset);
-    }
-  }, [getPresetById, settings]);
-
-  const handleClearFields = useCallback(() => {
-    setUserInput('');
-    setStructuredPrompt('');
-    settings.resetSettings();
-    setError(null);
-    setIsInputInvalid(false);
-  }, [settings.resetSettings]);
-
-  const insertSnippet = useCallback((content: string) => {
-      setUserInput(prev => {
-          const separator = prev.length > 0 && !prev.endsWith('\n') ? '\n\n' : '';
-          return prev + separator + content;
-      });
-      toast.success("Snippet inserido!", { icon: '📝' });
-  }, []);
+  }, [userInput, setUserInput]);
 
   return {
-    user,
-    // Generation State
-    userInput, setUserInput,
-    structuredPrompt,
     isLoading,
     isOptimizing,
     error,
     clearError,
-    isCopied,
-    activePanel, setActivePanel,
-    isInputInvalid, setIsInputInvalid,
-    
-    // Actions
     handleGeneratePrompt,
-    handleCopyToClipboard,
-    handleOptimizeInput,
-    handleClearFields,
     handleGenerateCompositePrompt,
-
-    // Settings
-    ...settings,
-
-    // Wrappers
-    loadFromHistory,
-    groupSelectedHistory,
-    insertSnippet,
-    handleSavePreset,
-    handleLoadPreset,
-
-    // Profile
-    profileLoading,
-    profileError,
-    profileSuccess,
-    updateUserProfile,
-    deleteUserAccount,
-    resetProfileMessages,
+    handleOptimizeInput
   };
 };

@@ -1,13 +1,13 @@
 import React from 'react';
 import { supabase } from '../config/supabase';
-import { usePromptGenerator } from '../hooks/usePromptGenerator';
 import { appTexts } from '../data/texts';
 import { ArrowLeftOnRectangleIcon, IdentificationIcon } from './Icons';
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react';
 import toast from 'react-hot-toast';
+import { User } from '@supabase/supabase-js';
 
 interface AuthProps {
-    user: ReturnType<typeof usePromptGenerator>['user'];
+    user: User | null;
     onLoginClick: () => void;
     onProfileClick: () => void;
 }

@@ -1,16 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
-import { usePromptGenerator } from '../hooks/usePromptGenerator';
+import { useAuth } from '../hooks/useAuth';
 import { ArrowUturnLeftIcon, UserCircleIcon } from './Icons';
 import { ConfirmationModal } from './ConfirmationModal';
 
 interface ProfileManagementProps {
-    promptGenerator: ReturnType<typeof usePromptGenerator>;
+    auth: ReturnType<typeof useAuth>;
     onBack: () => void;
 }
 
-export const ProfileManagement: React.FC<ProfileManagementProps> = ({ promptGenerator, onBack }) => {
-    const { user, profileLoading, profileError, profileSuccess, updateUserProfile, deleteUserAccount, resetProfileMessages } = promptGenerator;
+export const ProfileManagement: React.FC<ProfileManagementProps> = ({ auth, onBack }) => {
+    const { user, profileLoading, profileError, profileSuccess, updateUserProfile, deleteUserAccount, resetProfileMessages } = auth;
     
     const [fullName, setFullName] = useState(user?.user_metadata?.full_name || '');
     const [email, setEmail] = useState(user?.email || '');
