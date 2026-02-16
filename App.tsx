@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { usePromptGenerator } from './hooks/usePromptGenerator';
 import { SparklesIcon, HistoryIcon, TrashIcon, PencilSquareIcon, TerminalIcon, ClipboardIcon, ClipboardCheckIcon, XCircleIcon } from './components/Icons';
@@ -11,8 +10,8 @@ import { OutputPanel } from './components/OutputPanel';
 import { HistoryPanel, HistoryActions } from './components/HistoryPanel';
 import { ProfileManagement } from './components/ProfileManagement';
 import { appTexts } from './data/texts';
-import { ErrorToast } from './components/ErrorToast';
 import { ThemeSwitcher } from './components/ThemeSwitcher';
+import { Toaster, toast } from 'react-hot-toast';
 
 type View = 'main' | 'profile';
 
@@ -51,6 +50,14 @@ const App: React.FC = () => {
     }
   }, [isLoading]);
 
+  // Global Error Handling via Toast
+  useEffect(() => {
+    if (error) {
+        toast.error(error);
+        clearError();
+    }
+  }, [error, clearError]);
+
   // Reset to main view if user logs out
   useEffect(() => {
     if (!user && view === 'profile') {
@@ -63,6 +70,7 @@ const App: React.FC = () => {
     setSelectedPreset(presetId);
     if(presetId) {
         handleLoadPreset(presetId);
+        toast.success("Preset carregado!");
     }
   }
 
@@ -70,18 +78,20 @@ const App: React.FC = () => {
     if(selectedPreset) {
         handleDeletePreset(selectedPreset);
         setSelectedPreset('');
+        toast.success("Preset removido.");
     }
   }
 
   const onClearFields = () => {
     handleClearFields();
     setSelectedPreset('');
+    toast('Campos limpos', { icon: '🧹' });
   }
 
   const clearFieldsButton = (
     <button 
         onClick={(e) => { e.stopPropagation(); onClearFields(); }}
-        className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1"
+        className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1 focus:outline-none"
         title="Limpar todos os campos"
     >
         <XCircleIcon className="w-5 h-5" /> 
@@ -91,6 +101,13 @@ const App: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
+      <Toaster position="bottom-center" toastOptions={{
+          className: 'dark:bg-slate-800 dark:text-white',
+          style: {
+            background: 'var(--tw-bg-opacity, #fff)',
+            color: 'var(--tw-text-opacity, #333)',
+          }
+      }} />
       <header className="w-full max-w-7xl mb-6 flex justify-between items-center">
         <div className="text-left">
             <h1 className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-cyan-500 dark:from-purple-400 dark:to-cyan-400 flex items-center gap-3">
@@ -235,11 +252,6 @@ const App: React.FC = () => {
           </main>
       )}
       
-      <ErrorToast 
-        error={error} 
-        onClose={clearError} 
-        onLoginClick={() => setIsAuthModalOpen(true)} 
-      />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       <SavePresetModal isOpen={isSavePresetModalOpen} onClose={() => setIsSavePresetModalOpen(false)} onSave={promptGenerator.handleSavePreset} />
     </div>

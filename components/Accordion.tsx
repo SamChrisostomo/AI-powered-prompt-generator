@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { ChevronDownIcon } from './Icons';
 
 interface AccordionProps {
@@ -12,11 +12,13 @@ interface AccordionProps {
 }
 
 export const Accordion: React.FC<AccordionProps> = ({ title, icon, children, isOpen, onToggle, headerContent }) => {
+  const [parent] = useAutoAnimate();
+
   return (
     <div className="bg-white dark:bg-slate-800/50 rounded-2xl shadow-2xl shadow-slate-950/50 ring-1 ring-slate-200 dark:ring-white/10 overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full flex justify-between items-center p-6 text-left text-2xl font-bold text-slate-900 dark:text-slate-100"
+        className="w-full flex justify-between items-center p-6 text-left text-2xl font-bold text-slate-900 dark:text-slate-100 focus:outline-none"
         aria-expanded={isOpen}
       >
         <div className="flex items-center gap-3">
@@ -28,14 +30,12 @@ export const Accordion: React.FC<AccordionProps> = ({ title, icon, children, isO
           <ChevronDownIcon className={`w-6 h-6 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </button>
-      <div
-        className={`transition-all duration-500 ease-in-out grid ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
-      >
-        <div className="overflow-hidden">
+      <div ref={parent}>
+        {isOpen && (
             <div className="p-6 pt-0">
              {children}
             </div>
-        </div>
+        )}
       </div>
     </div>
   );

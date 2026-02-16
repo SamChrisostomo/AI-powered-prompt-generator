@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { usePromptGenerator } from '../hooks/usePromptGenerator';
 import { DetailLevel, OutputFormat } from '../models/Prompt';
@@ -8,6 +7,7 @@ import { getModePlaceholder } from '../data/texts';
 import { modeOptions } from '../data/options';
 import { CollapsibleSection } from './CollapsibleSection';
 import { PresetManager } from './PresetManager';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 interface InputPanelProps {
     promptGenerator: ReturnType<typeof usePromptGenerator>;
@@ -41,6 +41,8 @@ export const InputPanel: React.FC<Omit<InputPanelProps, 'onClearFields'>> = ({
         temperature, setTemperature,
         topK, setTopK,
     } = promptGenerator;
+    
+    const [modeListRef] = useAutoAnimate();
 
     const handleUserInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setUserInput(e.target.value);
@@ -52,7 +54,7 @@ export const InputPanel: React.FC<Omit<InputPanelProps, 'onClearFields'>> = ({
     return (
         <>
             <div className="mb-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl p-1.5">
+                <div ref={modeListRef} className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl p-1.5">
                     {modeOptions.map(mode => (
                         <button key={mode.id} onClick={() => setPromptMode(mode.id)} className={`w-full flex items-center justify-center text-xs sm:text-sm font-medium py-2.5 px-2 rounded-lg transition-colors ${promptMode === mode.id ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                             {React.cloneElement(mode.icon, {className: "w-4 h-4 mr-1.5 sm:w-5 sm:h-5 sm:mr-2"})}
