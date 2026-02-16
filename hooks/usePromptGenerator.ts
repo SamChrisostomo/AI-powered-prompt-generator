@@ -1,6 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { generateStructuredPrompt, generateCompositeStructuredPrompt } from '../services/promptService';
+import { optimizeUserInput } from '../services/geminiService';
 import { getHistory, addHistoryItem, deleteHistoryItems, clearAllHistory } from '../repositories/historyRepository';
 import { getSettings, saveSettings } from '../repositories/settingsRepository';
 import { getPresets, addPreset, deletePreset } from '../repositories/presetRepository';
@@ -18,6 +19,7 @@ export const usePromptGenerator = () => {
   const [userInput, setUserInput] = useState<string>('');
   const [structuredPrompt, setStructuredPrompt] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isOptimizing, setIsOptimizing] = useState<boolean>(false);
   const [isAdvancedMode, setIsAdvancedMode] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState<boolean>(false);
@@ -31,6 +33,11 @@ export const usePromptGenerator = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
   const [presets, setPresets] = useState<Preset[]>([]);
+
+  // Profile Management State
+  const [profileLoading, setProfileLoading] = useState<boolean>(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   
   // Auth listener
   useEffect(() => {
@@ -71,6 +78,84 @@ export const usePromptGenerator = () => {
       saveSettings(user.id, { isAdvancedMode, includeComments, detailLevel, outputFormat });
     }
   }, [user, isAdvancedMode, includeComments, detailLevel, outputFormat]);
+
+  const clearError = () => {
+    setError(null);
+  };
+
+  const resetProfileMessages = () => {
+    setProfileError(null);
+    setProfileSuccess(null);
+  };
+
+  const updateUserProfile = async (updates: { fullName?: string; email?: string; password?: string }) => {
+    resetProfileMessages();
+    setProfileLoading(true);
+
+    try {
+        const { fullName, email, password } = updates;
+        
+        if (fullName !== undefined) {
+            const { error } = await supabase.auth.updateUser({
+                data: { full_name: fullName }
+            });
+            if (error) throw new Error(`Erro ao atualizar nome: ${error.message}`);
+        }
+
+        if (email) {
+            const { error } = await supabase.auth.updateUser({ email });
+            if (error) throw new Error(`Erro ao atualizar e-mail: ${error.message}`);
+            setProfileSuccess("E-mail atualizado. Verifique sua caixa de entrada (antiga e nova) para confirmação.");
+            return; // Exit after email update to show message
+        }
+
+        if (password) {
+            const { error } = await supabase.auth.updateUser({ password });
+            if (error) throw new Error(`Erro ao atualizar senha: ${error.message}`);
+        }
+
+        setProfileSuccess("Perfil atualizado com sucesso!");
+
+    } catch (error: any) {
+        setProfileError(error.message);
+    } finally {
+        setProfileLoading(false);
+    }
+  };
+
+  const deleteUserAccount = async () => {
+    resetProfileMessages();
+    setProfileLoading(true);
+    try {
+        // IMPORTANT: This calls a Supabase RPC function `delete_user_account`
+        // which must be created in your Supabase project.
+        // The function should use the service_role key to delete the user from auth.users.
+        // This is necessary because client-side user deletion is restricted for security.
+        // The corresponding tables (History, Presets, Settings) should have
+        // "ON DELETE CASCADE" on their user_id foreign keys.
+        //
+        // SQL for the function:
+        // CREATE OR REPLACE FUNCTION delete_user_account()
+        // RETURNS void
+        // LANGUAGE plpgsql
+        // SECURITY DEFINER
+        // AS $$
+        // BEGIN
+        //   DELETE FROM auth.users WHERE id = auth.uid();
+        // END;
+        // $$;
+        const { error } = await supabase.rpc('delete_user_account');
+        if (error) {
+            throw error;
+        }
+        await supabase.auth.signOut();
+        // The onAuthStateChange listener will handle the rest of the UI update
+    } catch (error: any) {
+        setProfileError(`Erro ao deletar conta: ${error.message}`);
+    } finally {
+        setProfileLoading(false);
+    }
+  };
 
 
   const handleGeneratePrompt = useCallback(async (textToGenerate: string) => {
@@ -156,6 +241,20 @@ export const usePromptGenerator = () => {
     }
   }, [structuredPrompt]);
   
+  const handleOptimizeInput = useCallback(async () => {
+    if (!userInput.trim()) return;
+    setIsOptimizing(true);
+    try {
+      const optimizedText = await optimizeUserInput(userInput);
+      setUserInput(optimizedText);
+    } catch (err) {
+      // O erro já é logado no serviço, aqui podemos opcionalmente mostrar um erro na UI
+      setError("Falha ao otimizar o texto. Tente novamente.");
+    } finally {
+      setIsOptimizing(false);
+    }
+  }, [userInput]);
+
   const loadFromHistory = (item: HistoryItem) => {
     setUserInput(item.userInput);
     setStructuredPrompt(item.structuredPrompt);
@@ -236,13 +335,27 @@ export const usePromptGenerator = () => {
     setPresets(prev => prev.filter(p => p.id !== presetId));
   };
 
+  const handleClearFields = () => {
+    setUserInput('');
+    setStructuredPrompt('');
+    setPromptMode('geral');
+    setDetailLevel('detalhado');
+    setOutputFormat('markdown');
+    setIncludeComments(true);
+    setIsAdvancedMode(false);
+    setError(null);
+    setIsInputInvalid(false);
+  };
+
   return {
     user,
     userInput, setUserInput,
     structuredPrompt,
     isLoading,
+    isOptimizing,
     isAdvancedMode, setIsAdvancedMode,
     error,
+    clearError,
     isCopied,
     promptMode, setPromptMode,
     includeComments, setIncludeComments,
@@ -251,6 +364,7 @@ export const usePromptGenerator = () => {
     history,
     handleGeneratePrompt,
     handleCopyToClipboard,
+    handleOptimizeInput,
     loadFromHistory,
     clearHistory,
     activePanel, setActivePanel,
@@ -265,5 +379,13 @@ export const usePromptGenerator = () => {
     handleSavePreset,
     handleLoadPreset,
     handleDeletePreset,
+    handleClearFields,
+    // Profile Management
+    profileLoading,
+    profileError,
+    profileSuccess,
+    updateUserProfile,
+    deleteUserAccount,
+    resetProfileMessages,
   };
 };
