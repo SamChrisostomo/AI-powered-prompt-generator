@@ -2,11 +2,16 @@
 import { supabase } from '../config/supabase';
 import { DetailLevel, OutputFormat } from '../models/Prompt';
 
+export type Theme = 'light' | 'dark' | 'system';
+
 export interface UserSettings {
   isAdvancedMode: boolean;
   includeComments: boolean;
   detailLevel: DetailLevel;
   outputFormat: OutputFormat;
+  temperature: number;
+  topK: number;
+  theme: Theme;
 }
 
 export const getSettings = async (userId: string): Promise<UserSettings | null> => {
@@ -14,7 +19,7 @@ export const getSettings = async (userId: string): Promise<UserSettings | null> 
   try {
     const { data, error } = await supabase
       .from('UserSettings')
-      .select('isAdvancedMode, includeComments, detailLevel, outputFormat')
+      .select('isAdvancedMode, includeComments, detailLevel, outputFormat, temperature, topK, theme')
       .eq('userId', userId)
       .single();
 
@@ -27,6 +32,9 @@ export const getSettings = async (userId: string): Promise<UserSettings | null> 
       includeComments: data.includeComments,
       detailLevel: data.detailLevel as DetailLevel,
       outputFormat: data.outputFormat as OutputFormat,
+      temperature: data.temperature ?? 0.8,
+      topK: data.topK ?? 64,
+      theme: data.theme ?? 'system',
     } : null;
 
   } catch (error) {

@@ -25,7 +25,7 @@ export const UserInputTextarea: React.FC<UserInputTextareaProps> = ({
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
-                className={`w-full bg-slate-900/70 border rounded-lg p-4 pr-12 text-slate-300 placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-300 resize-none ${isInvalid ? 'border-red-500 ring-2 ring-red-500/50 shake' : 'border-slate-700'}`}
+                className={`w-full bg-white dark:bg-slate-800 border rounded-lg p-4 pr-12 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-300 resize-none ${isInvalid ? 'border-red-500 ring-2 ring-red-500/50 shake' : 'border-slate-300 dark:border-slate-700'}`}
                 rows={10}
                 aria-invalid={isInvalid}
             />
@@ -33,7 +33,7 @@ export const UserInputTextarea: React.FC<UserInputTextareaProps> = ({
                 <button
                     onClick={onOptimize}
                     disabled={isOptimizing || !value}
-                    className="p-2 text-slate-400 rounded-full bg-slate-800/50 hover:bg-slate-700/80 hover:text-purple-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 text-slate-500 dark:text-slate-400 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-purple-600 dark:hover:text-purple-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 dark:border-slate-600"
                     title="Otimizar com IA"
                 >
                     {isOptimizing ? (

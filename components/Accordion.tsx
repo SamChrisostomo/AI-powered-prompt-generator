@@ -13,10 +13,10 @@ interface AccordionProps {
 
 export const Accordion: React.FC<AccordionProps> = ({ title, icon, children, isOpen, onToggle, headerContent }) => {
   return (
-    <div className="bg-slate-800/50 rounded-2xl shadow-2xl shadow-slate-950/50 ring-1 ring-white/10 overflow-hidden">
+    <div className="bg-white dark:bg-slate-800/50 rounded-2xl shadow-2xl shadow-slate-950/50 ring-1 ring-slate-200 dark:ring-white/10 overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full flex justify-between items-center p-6 text-left text-2xl font-bold text-slate-100"
+        className="w-full flex justify-between items-center p-6 text-left text-2xl font-bold text-slate-900 dark:text-slate-100"
         aria-expanded={isOpen}
       >
         <div className="flex items-center gap-3">

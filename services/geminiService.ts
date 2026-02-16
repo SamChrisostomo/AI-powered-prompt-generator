@@ -23,7 +23,8 @@ export const optimizeUserInput = async (userInput: string): Promise<string> => {
   const contents = `${OPTIMIZE_SYSTEM_PROMPT}\n\n**Entrada do usuário:** "${userInput}"`;
 
   try {
-    const optimizedText = await generatePrompt('gemini-flash-latest', contents, {
+    // FIX: Updated model name from deprecated 'gemini-flash-latest' to 'gemini-3-flash-preview' for basic text tasks as per guidelines.
+    const optimizedText = await generatePrompt('gemini-3-flash-preview', contents, {
       temperature: 0.7,
     });
     return optimizedText.trim();

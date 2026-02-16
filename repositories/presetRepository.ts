@@ -23,6 +23,8 @@ export const getPresets = async (userId: string): Promise<Preset[]> => {
             outputFormat: item.outputFormat,
             includeComments: item.includeComments,
             isAdvancedMode: item.isAdvancedMode,
+            temperature: item.temperature ?? 0.8,
+            topK: item.topK ?? 64,
         }));
     } catch (error) {
         console.error("Falha ao carregar presets do Supabase", error);
@@ -49,6 +51,8 @@ export const addPreset = async (userId: string, preset: PresetData): Promise<Pre
             outputFormat: data.outputFormat,
             includeComments: data.includeComments,
             isAdvancedMode: data.isAdvancedMode,
+            temperature: data.temperature,
+            topK: data.topK,
         };
     } catch (error) {
         console.error("Falha ao salvar preset no Supabase", error);

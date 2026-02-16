@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { PromptMode } from '../models/Prompt';
-import { SparklesIcon, CodeBracketIcon, BugAntIcon, ArrowPathIcon, DocumentTextIcon, TableCellsIcon, HashtagIcon, BeakerIcon } from '../components/Icons';
+import { SparklesIcon, CodeBracketIcon, BugAntIcon, ArrowPathIcon, DocumentTextIcon, TableCellsIcon, HashtagIcon, BeakerIcon, ChartBarIcon } from '../components/Icons';
 import type { IconProps } from '../components/Icons';
 
 export const modeOptions: { id: PromptMode; name: string; icon: React.ReactElement<IconProps> }[] = [
@@ -13,6 +13,7 @@ export const modeOptions: { id: PromptMode; name: string; icon: React.ReactEleme
     { id: 'gerar_dados_ficticios', name: 'Dados', icon: <TableCellsIcon className="w-5 h-5 mr-2" /> },
     { id: 'escrever_regex', name: 'Regex', icon: <HashtagIcon className="w-5 h-5 mr-2" /> },
     { id: 'criar_planos_de_teste', name: 'Testes', icon: <BeakerIcon className="w-5 h-5 mr-2" /> },
+    { id: 'visualizar_dados', name: 'Visualizar', icon: <ChartBarIcon className="w-5 h-5 mr-2" /> },
 ];
 
 export const renderModeIcon = (mode: PromptMode) => {

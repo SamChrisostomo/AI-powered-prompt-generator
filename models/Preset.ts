@@ -9,4 +9,6 @@ export interface Preset {
   outputFormat: OutputFormat;
   includeComments: boolean;
   isAdvancedMode: boolean;
+  temperature: number;
+  topK: number;
 }

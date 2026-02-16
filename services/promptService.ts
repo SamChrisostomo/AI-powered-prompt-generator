@@ -112,6 +112,22 @@ const getModeTemplate = (mode: PromptMode): string => {
 *   **Casos de Borda e Cenários Negativos a Considerar:** [Ex: Inputs inválidos, senhas erradas, e-mails mal formatados, falhas de rede]
 
 `;
+    case 'visualizar_dados':
+      return `### 👤 PAPEL (ROLE)
+**Assuma o papel de:** Um especialista em visualização de dados e engenharia de frontend.
+
+### 📝 TAREFA (TASK)
+**Sua tarefa é:** Criar um componente de visualização de dados (gráfico/chart) com base nos dados e requisitos fornecidos.
+
+### CONTEXTO (CONTEXT)
+**Detalhes da Visualização:**
+*   **Dados de Entrada:** [Cole os dados aqui ou descreva a estrutura. Ex: JSON array, CSV]
+*   **Tipo de Gráfico:** [Ex: Gráfico de Barras, Linhas, Pizza, Scatter]
+*   **Biblioteca de Gráficos:** [Ex: Recharts, Chart.js, D3.js, Nivo]
+*   **Requisitos Visuais:** [Ex: Cores específicas, legendas, tooltips, eixos, responsividade]
+*   **Interatividade:** [Ex: Filtros, zoom, clique para detalhes]
+
+`;
     default: // 'geral'
       return `### 👤 PAPEL (ROLE)
 **Assuma o papel de:** [Descreva o papel/persona que a IA deve assumir. Ex: "um engenheiro de software sênior especialista em React e performance."]
@@ -160,6 +176,29 @@ const getOutputTemplate = (options: PromptOptions): string => {
     return instruction;
 };
 
+// Helper: Configuração centralizada para evitar duplicação
+const getGeminiConfig = (isAdvancedMode: boolean, options: PromptOptions) => {
+    if (isAdvancedMode) {
+        return {
+            modelName: 'gemini-3-pro-preview',
+            config: {
+                temperature: options.temperature ?? 0.8,
+                topK: options.topK ?? 64,
+                thinkingConfig: { thinkingBudget: 32768 }
+            }
+        };
+    }
+    return {
+        modelName: 'gemini-3-flash-preview',
+        config: { temperature: 0.5 }
+    };
+};
+
+// Helper: Execução da API
+const executeGeneration = (contents: string, isAdvancedMode: boolean, options: PromptOptions) => {
+    const { modelName, config } = getGeminiConfig(isAdvancedMode, options);
+    return generatePrompt(modelName, contents, config);
+};
 
 const getSystemInstruction = (userInput: string, options: PromptOptions): string => {
   const modeTemplate = getModeTemplate(options.mode);
@@ -181,39 +220,11 @@ ${outputTemplate}
 };
 
 export const generateStructuredPrompt = async (userInput: string, isAdvancedMode: boolean, options: PromptOptions): Promise<string> => {
-  const modelName = isAdvancedMode ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
-  
-  const baseConfig = {
-    temperature: 0.5,
-  };
-
-  const advancedConfig = {
-    temperature: 0.8,
-    topK: 64,
-    thinkingConfig: { thinkingBudget: 32768 }
-  };
-
-  const config = isAdvancedMode ? advancedConfig : baseConfig;
   const contents = getSystemInstruction(userInput, options);
-  
-  return generatePrompt(modelName, contents, config);
+  return executeGeneration(contents, isAdvancedMode, options);
 };
 
 export const generateCompositeStructuredPrompt = async (userInputs: string[], isAdvancedMode: boolean, options: PromptOptions): Promise<string> => {
-    const modelName = isAdvancedMode ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
-  
-    const baseConfig = {
-      temperature: 0.5,
-    };
-  
-    const advancedConfig = {
-      temperature: 0.8,
-      topK: 64,
-      thinkingConfig: { thinkingBudget: 32768 }
-    };
-  
-    const config = isAdvancedMode ? advancedConfig : baseConfig;
-
     const combinedIdeas = userInputs.map((input, index) => `Idéia ${index + 1}: "${input}"`).join('\n');
     
     const outputTemplate = getOutputTemplate(options);
@@ -233,5 +244,5 @@ ${modeTemplate}
 ${outputTemplate}
 ---`;
     
-    return generatePrompt(modelName, contents, config);
+    return executeGeneration(contents, isAdvancedMode, options);
 };

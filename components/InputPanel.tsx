@@ -2,11 +2,12 @@
 import React from 'react';
 import { usePromptGenerator } from '../hooks/usePromptGenerator';
 import { DetailLevel, OutputFormat } from '../models/Prompt';
-import { BookmarkIcon, XCircleIcon, TrashIcon, BrainCircuitIcon, BoltIcon, Cog6ToothIcon } from './Icons';
+import { BrainCircuitIcon, BoltIcon, Cog6ToothIcon } from './Icons';
 import { UserInputTextarea } from './UserInputTextarea';
 import { getModePlaceholder } from '../data/texts';
 import { modeOptions } from '../data/options';
 import { CollapsibleSection } from './CollapsibleSection';
+import { PresetManager } from './PresetManager';
 
 interface InputPanelProps {
     promptGenerator: ReturnType<typeof usePromptGenerator>;
@@ -38,6 +39,8 @@ export const InputPanel: React.FC<InputPanelProps> = ({
         handleGeneratePrompt,
         handleOptimizeInput,
         presets,
+        temperature, setTemperature,
+        topK, setTopK,
     } = promptGenerator;
 
     const handleUserInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -50,9 +53,9 @@ export const InputPanel: React.FC<InputPanelProps> = ({
     return (
         <>
             <div className="mb-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 bg-slate-900/70 border border-slate-700 rounded-lg p-1">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
                     {modeOptions.map(mode => (
-                        <button key={mode.id} onClick={() => setPromptMode(mode.id)} className={`w-full flex items-center justify-center text-xs sm:text-sm font-medium p-2 rounded-md transition-colors ${promptMode === mode.id ? 'bg-purple-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
+                        <button key={mode.id} onClick={() => setPromptMode(mode.id)} className={`w-full flex items-center justify-center text-xs sm:text-sm font-medium p-2 rounded-md transition-colors ${promptMode === mode.id ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                             {React.cloneElement(mode.icon, {className: "w-4 h-4 mr-1 sm:w-5 sm:h-5 sm:mr-2"})}
                             {mode.name}
                         </button>
@@ -68,65 +71,52 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                 isOptimizing={isOptimizing}
             />
             {isInputInvalid && (
-                <p className="mt-2 text-sm text-red-400">
+                <p className="mt-2 text-sm text-red-500 dark:text-red-400">
                     Por favor, insira uma descrição para o seu prompt.
                 </p>
             )}
 
             <div className="mt-6 space-y-4">
                 {user && (
-                     <CollapsibleSection title="Presets de Configuração" icon={<BookmarkIcon />}>
-                        <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-3 flex flex-col sm:flex-row gap-2 items-center">
-                            <select
-                                value={selectedPreset}
-                                onChange={onSelectedPresetChange}
-                                className="w-full sm:flex-1 bg-slate-700 border border-slate-600 rounded-md p-2 text-slate-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-                            >
-                                <option value="">Carregar um preset...</option>
-                                {presets.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                            </select>
-                            <div className="w-full sm:w-auto flex gap-2">
-                                {selectedPreset && (
-                                    <button onClick={onDeletePreset} title="Excluir Preset" className="w-full sm:w-auto px-3 py-2 text-sm bg-red-800/50 hover:bg-red-700/50 text-red-300 font-medium rounded-md transition-colors flex items-center justify-center gap-1">
-                                        <TrashIcon className="w-4 h-4" />
-                                    </button>
-                                )}
-                                <button onClick={onClearFields} title="Limpar Campos" className="w-full sm:w-auto px-3 py-2 text-sm bg-slate-600 hover:bg-slate-500 text-white font-medium rounded-md transition-colors flex items-center justify-center gap-1">
-                                    <XCircleIcon className="w-4 h-4" />
-                                </button>
-                                <button onClick={onSavePresetClick} className="w-full sm:w-auto px-4 py-2 text-sm bg-slate-600 hover:bg-slate-500 text-white font-medium rounded-md transition-colors">
-                                    Salvar Atual
-                                </button>
-                            </div>
-                        </div>
-                    </CollapsibleSection>
+                    <PresetManager 
+                        presets={presets}
+                        selectedPresetId={selectedPreset}
+                        onSelectPreset={onSelectedPresetChange}
+                        onDeletePreset={onDeletePreset}
+                        onSavePreset={onSavePresetClick}
+                        onClear={onClearFields}
+                    />
                 )}
       
                 <CollapsibleSection title="Personalizar Saída" icon={<Cog6ToothIcon />}>
                     <div className="space-y-3">
-                        <label htmlFor="comments-toggle" className="flex items-center justify-between cursor-pointer select-none">
-                            <span className="text-slate-300">Incluir comentários/explicações</span>
+                        <label 
+                            htmlFor="comments-toggle" 
+                            className="flex items-center justify-between cursor-pointer select-none"
+                            title="Quando ativado, a IA adicionará explicações detalhadas ao código ou resposta."
+                        >
+                            <span className="text-slate-700 dark:text-slate-300 font-medium">Incluir comentários/explicações</span>
                             <div className="relative">
                                 <input type="checkbox" id="comments-toggle" className="sr-only" checked={includeComments} onChange={() => setIncludeComments(!includeComments)} />
-                                <div className={`block w-10 h-6 rounded-full transition-colors ${includeComments ? 'bg-purple-600' : 'bg-slate-600'}`}></div>
+                                <div className={`block w-10 h-6 rounded-full transition-colors ${includeComments ? 'bg-purple-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
                                 <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${includeComments ? 'translate-x-4' : 'translate-x-0'}`}></div>
                             </div>
                         </label>
                         <div>
-                            <span className="text-slate-300 block mb-2">Nível de detalhe</span>
-                            <div className="flex bg-slate-800 border border-slate-600 rounded-md p-1">
+                            <span className="text-slate-700 dark:text-slate-300 font-medium block mb-2">Nível de detalhe</span>
+                            <div className="flex bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md p-1">
                                 {(['conciso', 'detalhado', 'com exemplos'] as DetailLevel[]).map(level => (
-                                <button key={level} onClick={() => setDetailLevel(level)} className={`w-full text-xs capitalize p-1.5 rounded transition-colors ${detailLevel === level ? 'bg-purple-600 text-white' : 'hover:bg-slate-700'}`}>
+                                <button key={level} onClick={() => setDetailLevel(level)} className={`w-full text-xs capitalize p-1.5 rounded transition-colors ${detailLevel === level ? 'bg-purple-600 text-white shadow-sm' : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
                                     {level}
                                 </button>
                                 ))}
                             </div>
                         </div>
                         <div>
-                            <span className="text-slate-300 block mb-2">Formato de saída</span>
-                            <div className="flex bg-slate-800 border border-slate-600 rounded-md p-1">
+                            <span className="text-slate-700 dark:text-slate-300 font-medium block mb-2">Formato de saída</span>
+                            <div className="flex bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md p-1">
                                 {(['markdown', 'puro'] as OutputFormat[]).map(format => (
-                                <button key={format} onClick={() => setOutputFormat(format)} className={`w-full text-xs capitalize p-1.5 rounded transition-colors ${outputFormat === format ? 'bg-purple-600 text-white' : 'hover:bg-slate-700'}`}>
+                                <button key={format} onClick={() => setOutputFormat(format)} className={`w-full text-xs capitalize p-1.5 rounded transition-colors ${outputFormat === format ? 'bg-purple-600 text-white shadow-sm' : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
                                     {format === 'puro' ? 'Código Puro' : 'Markdown'}
                                 </button>
                                 ))}
@@ -138,21 +128,53 @@ export const InputPanel: React.FC<InputPanelProps> = ({
 
             <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                    <label htmlFor="advanced-toggle" className="flex items-center cursor-pointer select-none">
+                    <label 
+                        htmlFor="advanced-toggle" 
+                        className="flex items-center cursor-pointer select-none"
+                        title="Desbloqueia o modelo de IA mais potente e permite ajustar parâmetros como Temperatura e Top-K para um controle mais refinado."
+                    >
                         <div className="relative">
                             <input type="checkbox" id="advanced-toggle" className="sr-only" checked={isAdvancedMode} onChange={() => setIsAdvancedMode(!isAdvancedMode)} />
-                            <div className={`block w-14 h-8 rounded-full transition-colors ${isAdvancedMode ? 'bg-purple-600' : 'bg-slate-700'}`}></div>
+                            <div className={`block w-14 h-8 rounded-full transition-colors ${isAdvancedMode ? 'bg-purple-600' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
                             <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${isAdvancedMode ? 'translate-x-6' : 'translate-x-0'}`}></div>
                         </div>
-                        <div className="ml-3 text-slate-300 font-medium flex items-center gap-2">
+                        <div className="ml-3 text-slate-700 dark:text-slate-300 font-medium flex items-center gap-2">
                             <BrainCircuitIcon className="w-5 h-5" />
                             Modo Avançado
                         </div>
                     </label>
                     {isAdvancedMode && (
-                        <div className="mt-2 ml-4 p-3 bg-slate-900/70 border border-slate-700 rounded-lg text-xs text-slate-400">
-                            <p><span className="font-semibold text-slate-300">Temperatura:</span> <span className="font-mono text-purple-400">0.8</span> (Mais criativo)</p>
-                            <p><span className="font-semibold text-slate-300">Top-K:</span> <span className="font-mono text-purple-400">64</span></p>
+                        <div className="mt-2 ml-4 p-3 bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-400 w-full max-w-xs space-y-3 shadow-sm">
+                           <div title="Controla a criatividade da resposta. Valores mais altos (ex: 1.0) são mais criativos, enquanto valores mais baixos (ex: 0.2) são mais diretos e previsíveis.">
+                                <div className="flex justify-between items-center mb-1">
+                                    <label htmlFor="temperature" className="font-semibold text-slate-700 dark:text-slate-300">Temperatura</label>
+                                    <span className="font-mono text-purple-600 dark:text-purple-400">{temperature.toFixed(1)}</span>
+                                </div>
+                                <input 
+                                    type="range"
+                                    id="temperature"
+                                    min="0" max="1" step="0.1"
+                                    value={temperature}
+                                    onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                                />
+                                <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">Valores mais altos geram respostas mais criativas.</p>
+                           </div>
+                           <div title="Restringe a seleção de palavras da IA. Um valor menor (ex: 10) limita a escolha às palavras mais prováveis, tornando a resposta mais focada.">
+                                <div className="flex justify-between items-center mb-1">
+                                    <label htmlFor="topk" className="font-semibold text-slate-700 dark:text-slate-300">Top-K</label>
+                                    <span className="font-mono text-purple-600 dark:text-purple-400">{topK}</span>
+                                </div>
+                                <input 
+                                    type="range"
+                                    id="topk"
+                                    min="1" max="100" step="1"
+                                    value={topK}
+                                    onChange={(e) => setTopK(parseInt(e.target.value, 10))}
+                                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                                />
+                                <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">Limita a seleção de palavras às mais prováveis.</p>
+                           </div>
                         </div>
                     )}
                 </div>
