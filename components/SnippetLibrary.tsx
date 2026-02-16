@@ -1,0 +1,79 @@
+
+import React, { useState } from 'react';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { Snippet } from '../models/Snippet';
+import { SnippetIcon, PlusIcon, TrashIcon, DocumentPlusIcon } from './Icons';
+import { CollapsibleSection } from './CollapsibleSection';
+import { AddSnippetModal } from './AddSnippetModal';
+
+interface SnippetLibraryProps {
+    snippets: Snippet[];
+    onInsertSnippet: (content: string) => void;
+    onDeleteSnippet: (id: string) => void;
+    onSaveSnippet: (title: string, content: string) => Promise<void>;
+}
+
+export const SnippetLibrary: React.FC<SnippetLibraryProps> = ({
+    snippets,
+    onInsertSnippet,
+    onDeleteSnippet,
+    onSaveSnippet
+}) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [listRef] = useAutoAnimate();
+
+    return (
+        <>
+            <CollapsibleSection title="Snippets de Código" icon={<SnippetIcon />}>
+                <div className="space-y-3">
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="w-full flex items-center justify-center gap-2 p-2 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors text-sm font-semibold"
+                    >
+                        <PlusIcon className="w-4 h-4" />
+                        Criar Novo Snippet
+                    </button>
+
+                    <div ref={listRef} className="space-y-2 max-h-60 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
+                        {snippets.length === 0 ? (
+                            <p className="text-center text-xs text-slate-500 dark:text-slate-400 py-4 italic">
+                                Nenhum snippet salvo.
+                            </p>
+                        ) : (
+                            snippets.map(snippet => (
+                                <div key={snippet.id} className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md group hover:border-purple-300 dark:hover:border-purple-600 transition-colors">
+                                    <div className="flex-1 min-w-0 mr-2">
+                                        <h4 className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate" title={snippet.title}>{snippet.title}</h4>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate font-mono">{snippet.content.substring(0, 30)}...</p>
+                                    </div>
+                                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() => onInsertSnippet(snippet.content)}
+                                            className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
+                                            title="Inserir no editor"
+                                        >
+                                            <DocumentPlusIcon className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => onDeleteSnippet(snippet.id)}
+                                            className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                                            title="Excluir snippet"
+                                        >
+                                            <TrashIcon className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            </CollapsibleSection>
+            
+            <AddSnippetModal 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={onSaveSnippet}
+            />
+        </>
+    );
+};

@@ -10,6 +10,8 @@ import { useAuth } from './useAuth';
 import { useSettings } from './useSettings';
 import { useHistory } from './useHistory';
 import { usePresets } from './usePresets';
+import { useSnippets } from './useSnippets';
+import toast from 'react-hot-toast';
 
 type ActivePanel = 'input' | 'output' | 'history';
 
@@ -19,6 +21,7 @@ export const usePromptGenerator = () => {
   const settings = useSettings(user);
   const historyMgr = useHistory(user);
   const presetsMgr = usePresets(user);
+  const snippetsMgr = useSnippets(user);
 
   // --- Local State for Generation Logic ---
   const [userInput, setUserInput] = useState<string>('');
@@ -178,6 +181,14 @@ export const usePromptGenerator = () => {
     setIsInputInvalid(false);
   };
 
+  const insertSnippet = (content: string) => {
+      setUserInput(prev => {
+          const separator = prev.length > 0 && !prev.endsWith('\n') ? '\n\n' : '';
+          return prev + separator + content;
+      });
+      toast.success("Snippet inserido!", { icon: '📝' });
+  };
+
   // Expose aggregated API
   return {
     user,
@@ -217,6 +228,12 @@ export const usePromptGenerator = () => {
     handleSavePreset,
     handleLoadPreset,
     handleDeletePreset: presetsMgr.removePreset,
+
+    // Snippets
+    snippets: snippetsMgr.snippets,
+    handleSaveSnippet: snippetsMgr.saveSnippet,
+    handleDeleteSnippet: snippetsMgr.removeSnippet,
+    insertSnippet,
 
     // Profile Management
     profileLoading,

@@ -28,7 +28,10 @@ import {
   HiArrowUturnLeft, 
   HiSun, 
   HiMoon, 
-  HiComputerDesktop
+  HiComputerDesktop,
+  HiPlus,
+  HiDocumentPlus,
+  HiClipboardDocumentList
 } from 'react-icons/hi2';
 
 export interface IconProps {
@@ -68,3 +71,6 @@ export const ArrowUturnLeftIcon: React.FC<IconProps> = ({ className }) => <HiArr
 export const SunIcon: React.FC<IconProps> = ({ className }) => <HiSun className={className} />;
 export const MoonIcon: React.FC<IconProps> = ({ className }) => <HiMoon className={className} />;
 export const ComputerDesktopIcon: React.FC<IconProps> = ({ className }) => <HiComputerDesktop className={className} />;
+export const PlusIcon: React.FC<IconProps> = ({ className }) => <HiPlus className={className} />;
+export const DocumentPlusIcon: React.FC<IconProps> = ({ className }) => <HiDocumentPlus className={className} />;
+export const SnippetIcon: React.FC<IconProps> = ({ className }) => <HiClipboardDocumentList className={className} />;

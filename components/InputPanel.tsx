@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { usePromptGenerator } from '../hooks/usePromptGenerator';
 import { DetailLevel, OutputFormat } from '../models/Prompt';
@@ -7,6 +8,7 @@ import { getModePlaceholder } from '../data/texts';
 import { modeOptions } from '../data/options';
 import { CollapsibleSection } from './CollapsibleSection';
 import { PresetManager } from './PresetManager';
+import { SnippetLibrary } from './SnippetLibrary';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 interface InputPanelProps {
@@ -40,6 +42,10 @@ export const InputPanel: React.FC<Omit<InputPanelProps, 'onClearFields'>> = ({
         presets,
         temperature, setTemperature,
         topK, setTopK,
+        snippets,
+        insertSnippet,
+        handleDeleteSnippet,
+        handleSaveSnippet
     } = promptGenerator;
     
     const [modeListRef] = useAutoAnimate();
@@ -79,13 +85,21 @@ export const InputPanel: React.FC<Omit<InputPanelProps, 'onClearFields'>> = ({
 
             <div className="mt-6 space-y-4">
                 {user && (
-                    <PresetManager 
-                        presets={presets}
-                        selectedPresetId={selectedPreset}
-                        onSelectPreset={onSelectedPresetChange}
-                        onDeletePreset={onDeletePreset}
-                        onSavePreset={onSavePresetClick}
-                    />
+                    <>
+                        <SnippetLibrary 
+                            snippets={snippets}
+                            onInsertSnippet={insertSnippet}
+                            onDeleteSnippet={handleDeleteSnippet}
+                            onSaveSnippet={handleSaveSnippet}
+                        />
+                        <PresetManager 
+                            presets={presets}
+                            selectedPresetId={selectedPreset}
+                            onSelectPreset={onSelectedPresetChange}
+                            onDeletePreset={onDeletePreset}
+                            onSavePreset={onSavePresetClick}
+                        />
+                    </>
                 )}
       
                 <CollapsibleSection title="Personalizar Saída" icon={<Cog6ToothIcon />}>
