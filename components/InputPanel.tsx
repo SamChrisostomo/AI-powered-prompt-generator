@@ -18,13 +18,12 @@ interface InputPanelProps {
     onClearFields: () => void;
 }
 
-export const InputPanel: React.FC<InputPanelProps> = ({
+export const InputPanel: React.FC<Omit<InputPanelProps, 'onClearFields'>> = ({
     promptGenerator,
     onSavePresetClick,
     selectedPreset,
     onSelectedPresetChange,
     onDeletePreset,
-    onClearFields,
 }) => {
     const {
         user,
@@ -84,7 +83,6 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                         onSelectPreset={onSelectedPresetChange}
                         onDeletePreset={onDeletePreset}
                         onSavePreset={onSavePresetClick}
-                        onClear={onClearFields}
                     />
                 )}
       

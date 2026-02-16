@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BookmarkIcon, TrashIcon, XCircleIcon } from './Icons';
+import { BookmarkIcon, TrashIcon } from './Icons';
 import { CollapsibleSection } from './CollapsibleSection';
 import { Preset } from '../models/Preset';
 
@@ -13,13 +13,12 @@ interface PresetManagerProps {
     onClear: () => void;
 }
 
-export const PresetManager: React.FC<PresetManagerProps> = ({
+export const PresetManager: React.FC<Omit<PresetManagerProps, 'onClear'>> = ({
     presets,
     selectedPresetId,
     onSelectPreset,
     onDeletePreset,
-    onSavePreset,
-    onClear
+    onSavePreset
 }) => {
     return (
         <CollapsibleSection title="Presets de Configuração" icon={<BookmarkIcon />}>
@@ -38,9 +37,6 @@ export const PresetManager: React.FC<PresetManagerProps> = ({
                             <TrashIcon className="w-4 h-4" />
                         </button>
                     )}
-                    <button onClick={onClear} title="Limpar Campos" className="w-full sm:w-auto px-3 py-2 text-sm bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500 text-slate-700 dark:text-white font-medium rounded-md transition-colors flex items-center justify-center gap-1">
-                        <XCircleIcon className="w-4 h-4" />
-                    </button>
                     <button onClick={onSavePreset} className="w-full sm:w-auto px-4 py-2 text-sm bg-white dark:bg-slate-600 hover:bg-slate-50 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500 text-slate-700 dark:text-white font-medium rounded-md transition-colors">
                         Salvar Atual
                     </button>

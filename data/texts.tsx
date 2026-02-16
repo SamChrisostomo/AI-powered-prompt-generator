@@ -10,7 +10,6 @@ export const getModePlaceholder = (promptMode: PromptMode): string => {
       case 'gerar_dados_ficticios': return "Ex: 10 usuários com nome, email e endereço no formato JSON...";
       case 'escrever_regex': return "Ex: Validar um e-mail que aceite o subdomínio '.co.uk'...";
       case 'criar_planos_de_teste': return "Ex: Casos de teste para a funcionalidade de login, incluindo cenários de sucesso e falha...";
-      case 'visualizar_dados': return "Ex: Cole aqui os dados (JSON/CSV) e descreva como deseja visualizá-los (ex: gráfico de barras usando Recharts)...";
       default: return "Ex: Crie um componente de botão em React com TypeScript e Tailwind CSS que tenha um estado de loading...";
     }
 }

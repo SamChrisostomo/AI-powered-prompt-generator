@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePromptGenerator } from './hooks/usePromptGenerator';
-import { SparklesIcon, HistoryIcon, TrashIcon, PencilSquareIcon, TerminalIcon, ClipboardIcon, ClipboardCheckIcon } from './components/Icons';
+import { SparklesIcon, HistoryIcon, TrashIcon, PencilSquareIcon, TerminalIcon, ClipboardIcon, ClipboardCheckIcon, XCircleIcon } from './components/Icons';
 import { Accordion } from './components/Accordion';
 import { AuthModal } from './components/AuthModal';
 import { SavePresetModal } from './components/SavePresetModal';
@@ -77,6 +77,17 @@ const App: React.FC = () => {
     handleClearFields();
     setSelectedPreset('');
   }
+
+  const clearFieldsButton = (
+    <button 
+        onClick={(e) => { e.stopPropagation(); onClearFields(); }}
+        className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1"
+        title="Limpar todos os campos"
+    >
+        <XCircleIcon className="w-5 h-5" /> 
+        <span className="hidden sm:inline">Limpar</span>
+    </button>
+  );
   
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
@@ -107,6 +118,7 @@ const App: React.FC = () => {
                         icon={<PencilSquareIcon className="w-6 h-6" />}
                         isOpen={isDesktopInputOpen}
                         onToggle={() => setIsDesktopInputOpen(!isDesktopInputOpen)}
+                        headerContent={clearFieldsButton}
                     >
                         <InputPanel 
                             promptGenerator={promptGenerator}
@@ -114,7 +126,6 @@ const App: React.FC = () => {
                             selectedPreset={selectedPreset}
                             onSelectedPresetChange={onSelectPreset}
                             onDeletePreset={onDeletePreset}
-                            onClearFields={onClearFields}
                         />
                     </Accordion>
                     
@@ -157,7 +168,7 @@ const App: React.FC = () => {
                         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"><HistoryIcon className="w-6 h-6" /> {appTexts.historyTitle}</h2>
                         {selectedHistoryIds.length > 0 
                             ? <HistoryActions {...promptGenerator} /> 
-                            : (history.length > 0 && user && <button onClick={clearHistory} className="text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1"><TrashIcon className="w-4 h-4" /> Limpar Tudo</button>)}
+                            : (history.length > 0 && user && <button onClick={clearHistory} className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1"><XCircleIcon className="w-4 h-4" /> Limpar Histórico Completo</button>)}
                     </div>
                     <HistoryPanel promptGenerator={promptGenerator} />
                 </div>
@@ -170,6 +181,7 @@ const App: React.FC = () => {
                     icon={<PencilSquareIcon className="w-6 h-6"/>}
                     isOpen={promptGenerator.activePanel === 'input'}
                     onToggle={() => promptGenerator.setActivePanel('input')}
+                    headerContent={clearFieldsButton}
                 >
                     <InputPanel 
                         promptGenerator={promptGenerator}
@@ -177,7 +189,6 @@ const App: React.FC = () => {
                         selectedPreset={selectedPreset}
                         onSelectedPresetChange={onSelectPreset}
                         onDeletePreset={onDeletePreset}
-                        onClearFields={onClearFields}
                     />
                 </Accordion>
                 <Accordion 
@@ -212,7 +223,7 @@ const App: React.FC = () => {
                     onToggle={() => promptGenerator.setActivePanel('history')}
                     headerContent={selectedHistoryIds.length > 0 
                         ? <HistoryActions {...promptGenerator} /> 
-                        : (history.length > 0 && user && <button onClick={(e) => { e.stopPropagation(); clearHistory(); }} className="text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1"><TrashIcon className="w-4 h-4" /> Limpar Tudo</button>)}
+                        : (history.length > 0 && user && <button onClick={(e) => { e.stopPropagation(); clearHistory(); }} className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1"><XCircleIcon className="w-4 h-4" /> Limpar Histórico Completo</button>)}
                 >
                     <HistoryPanel promptGenerator={promptGenerator} />
                 </Accordion>

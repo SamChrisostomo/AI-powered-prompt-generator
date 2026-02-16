@@ -103,21 +103,6 @@ export const ROLE_TEMPLATES: Record<PromptMode, string> = {
 *   **Casos de Borda e Cenários Negativos a Considerar:** [Ex: Inputs inválidos, senhas erradas, e-mails mal formatados, falhas de rede]
 
 `,
-    visualizar_dados: `### 👤 PAPEL (ROLE)
-**Assuma o papel de:** Um especialista em visualização de dados e engenharia de frontend.
-
-### 📝 TAREFA (TASK)
-**Sua tarefa é:** Criar um componente de visualização de dados (gráfico/chart) com base nos dados e requisitos fornecidos.
-
-### CONTEXTO (CONTEXT)
-**Detalhes da Visualização:**
-*   **Dados de Entrada:** [Cole os dados aqui ou descreva a estrutura. Ex: JSON array, CSV]
-*   **Tipo de Gráfico:** [Ex: Gráfico de Barras, Linhas, Pizza, Scatter]
-*   **Biblioteca de Gráficos:** [Ex: Recharts, Chart.js, D3.js, Nivo]
-*   **Requisitos Visuais:** [Ex: Cores específicas, legendas, tooltips, eixos, responsividade]
-*   **Interatividade:** [Ex: Filtros, zoom, clique para detalhes]
-
-`,
     geral: `### 👤 PAPEL (ROLE)
 **Assuma o papel de:** [Descreva o papel/persona que a IA deve assumir. Ex: "um engenheiro de software sênior especialista em React e performance."]
 
