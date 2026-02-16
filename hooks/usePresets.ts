@@ -1,20 +1,36 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPresets, addPreset, deletePreset } from '../repositories/presetRepository';
-import { Preset } from '../models/Preset';
-import type { User } from '@supabase/supabase-js';
+import { useAuth } from './useAuth';
 import { PromptMode, DetailLevel, OutputFormat } from '../models/Prompt';
 
-export const usePresets = (user: User | null) => {
-  const [presets, setPresets] = useState<Preset[]>([]);
+export const usePresets = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (user) {
-      getPresets(user.id).then(setPresets);
-    } else {
-      setPresets([]);
+  const presetsQuery = useQuery({
+    queryKey: ['presets', user?.id],
+    queryFn: () => getPresets(user!.id),
+    enabled: !!user,
+    initialData: []
+  });
+
+  const addMutation = useMutation({
+    mutationFn: (data: { name: string, settings: any }) => 
+        addPreset(user!.id, { name: data.name, ...data.settings }),
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['presets', user?.id] });
     }
-  }, [user]);
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (presetId: string) => deletePreset(user!.id, presetId),
+    onSuccess: (_, presetId) => {
+        queryClient.setQueryData(['presets', user?.id], (old: any[]) => 
+            old ? old.filter(p => p.id !== presetId) : []
+        );
+    }
+  });
 
   const savePreset = async (
       name: string, 
@@ -28,25 +44,20 @@ export const usePresets = (user: User | null) => {
         topK: number;
       }
   ) => {
-    if (!user) return;
-    const newPreset = await addPreset(user.id, { name, ...settings });
-    if (newPreset) {
-        setPresets(prev => [...prev, newPreset]);
-    }
+    return addMutation.mutateAsync({ name, settings });
   };
 
   const removePreset = async (presetId: string) => {
-    if (!user) return;
-    await deletePreset(user.id, presetId);
-    setPresets(prev => prev.filter(p => p.id !== presetId));
+    return deleteMutation.mutateAsync(presetId);
   };
 
   const getPresetById = (presetId: string) => {
-      return presets.find(p => p.id === presetId);
+      return presetsQuery.data.find(p => p.id === presetId);
   }
 
   return {
-      presets,
+      presets: presetsQuery.data,
+      isLoading: presetsQuery.isLoading,
       savePreset,
       removePreset,
       getPresetById

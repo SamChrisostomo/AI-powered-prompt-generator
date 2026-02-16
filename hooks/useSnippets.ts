@@ -1,37 +1,40 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSnippets, addSnippet, deleteSnippet } from '../repositories/snippetRepository';
-import { Snippet } from '../models/Snippet';
-import type { User } from '@supabase/supabase-js';
+import { useAuth } from './useAuth';
 
-export const useSnippets = (user: User | null) => {
-  const [snippets, setSnippets] = useState<Snippet[]>([]);
+export const useSnippets = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (user) {
-      getSnippets(user.id).then(setSnippets);
-    } else {
-      setSnippets([]);
+  const snippetsQuery = useQuery({
+    queryKey: ['snippets', user?.id],
+    queryFn: () => getSnippets(user!.id),
+    enabled: !!user,
+    initialData: []
+  });
+
+  const addMutation = useMutation({
+    mutationFn: (data: { title: string, content: string }) => 
+        addSnippet(user!.id, data),
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['snippets', user?.id] });
     }
-  }, [user]);
+  });
 
-  const saveSnippet = async (title: string, content: string) => {
-    if (!user) return;
-    const newSnippet = await addSnippet(user.id, { title, content });
-    if (newSnippet) {
-        setSnippets(prev => [newSnippet, ...prev]);
+  const deleteMutation = useMutation({
+    mutationFn: (snippetId: string) => deleteSnippet(user!.id, snippetId),
+    onSuccess: (_, snippetId) => {
+        queryClient.setQueryData(['snippets', user?.id], (old: any[]) => 
+            old ? old.filter(s => s.id !== snippetId) : []
+        );
     }
-  };
-
-  const removeSnippet = async (snippetId: string) => {
-    if (!user) return;
-    await deleteSnippet(user.id, snippetId);
-    setSnippets(prev => prev.filter(s => s.id !== snippetId));
-  };
+  });
 
   return {
-      snippets,
-      saveSnippet,
-      removeSnippet
+      snippets: snippetsQuery.data,
+      isLoading: snippetsQuery.isLoading,
+      saveSnippet: (title: string, content: string) => addMutation.mutateAsync({ title, content }),
+      removeSnippet: (id: string) => deleteMutation.mutateAsync(id)
   };
 };

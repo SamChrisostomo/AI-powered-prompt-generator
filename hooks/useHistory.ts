@@ -1,51 +1,47 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getHistory, addHistoryItem, deleteHistoryItems, clearAllHistory } from '../repositories/historyRepository';
-import { HistoryItem } from '../models/History';
 import { PromptMode } from '../models/Prompt';
-import type { User } from '@supabase/supabase-js';
+import { useAuth } from './useAuth';
 
-export const useHistory = (user: User | null) => {
-  const [history, setHistory] = useState<HistoryItem[]>([]);
+export const useHistory = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (user) {
-      getHistory(user.id).then(setHistory);
-    } else {
-      setHistory([]);
-    }
-  }, [user]);
+  const historyQuery = useQuery({
+    queryKey: ['history', user?.id],
+    queryFn: () => getHistory(user!.id),
+    enabled: !!user,
+    initialData: [],
+  });
 
-  const addToHistory = async (userInput: string, structuredPrompt: string, mode: PromptMode) => {
-      if (!user) return;
-      const newItemData = { userInput, structuredPrompt, mode };
-      const newHistoryItem = await addHistoryItem(user.id, newItemData);
-      if (newHistoryItem) {
-        setHistory(prev => [newHistoryItem, ...prev]);
-      }
-  };
+  const addMutation = useMutation({
+    mutationFn: (data: { userInput: string, structuredPrompt: string, mode: PromptMode }) => 
+      addHistoryItem(user!.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['history', user?.id] });
+    },
+  });
 
-  const clearHistory = async () => {
-    if (!user) return;
-    await clearAllHistory(user.id);
-    setHistory([]);
-    setSelectedHistoryIds([]);
-  };
-  
-  const deleteHistoryItem = async (id: string) => {
-    if (!user) return;
-    await deleteHistoryItems(user.id, [id]);
-    setHistory(prev => prev.filter(item => item.id !== id));
-    setSelectedHistoryIds(prev => prev.filter(selectedId => selectedId !== id));
-  };
-  
-  const deleteSelectedHistory = async () => {
-    if (!user || selectedHistoryIds.length === 0) return;
-    await deleteHistoryItems(user.id, selectedHistoryIds);
-    setHistory(prev => prev.filter(item => !selectedHistoryIds.includes(item.id)));
-    setSelectedHistoryIds([]);
-  };
+  const deleteMutation = useMutation({
+    mutationFn: (ids: string[]) => deleteHistoryItems(user!.id, ids),
+    onSuccess: (_, ids) => {
+      queryClient.setQueryData(['history', user?.id], (old: any[]) => 
+        old ? old.filter(item => !ids.includes(item.id)) : []
+      );
+      setSelectedHistoryIds(prev => prev.filter(id => !ids.includes(id)));
+    },
+  });
+
+  const clearAllMutation = useMutation({
+    mutationFn: () => clearAllHistory(user!.id),
+    onSuccess: () => {
+      queryClient.setQueryData(['history', user?.id], []);
+      setSelectedHistoryIds([]);
+    },
+  });
 
   const toggleHistorySelection = (id: string) => {
     setSelectedHistoryIds(prev => 
@@ -54,8 +50,8 @@ export const useHistory = (user: User | null) => {
   };
 
   const getCombinedHistoryText = () => {
-    if (selectedHistoryIds.length === 0) return '';
-    const selectedItems = history
+    if (selectedHistoryIds.length === 0 || !historyQuery.data) return '';
+    const selectedItems = historyQuery.data
       .filter(item => selectedHistoryIds.includes(item.id))
       .sort((a, b) => a.timestamp - b.timestamp);
     
@@ -65,12 +61,14 @@ export const useHistory = (user: User | null) => {
   const clearSelection = () => setSelectedHistoryIds([]);
 
   return {
-      history,
+      history: historyQuery.data,
+      isLoading: historyQuery.isLoading,
       selectedHistoryIds,
-      addToHistory,
-      clearHistory,
-      deleteHistoryItem,
-      deleteSelectedHistory,
+      addToHistory: (userInput: string, structuredPrompt: string, mode: PromptMode) => 
+        addMutation.mutateAsync({ userInput, structuredPrompt, mode }),
+      clearHistory: () => clearAllMutation.mutateAsync(),
+      deleteHistoryItem: (id: string) => deleteMutation.mutateAsync([id]),
+      deleteSelectedHistory: () => deleteMutation.mutateAsync(selectedHistoryIds),
       toggleHistorySelection,
       getCombinedHistoryText,
       clearSelection

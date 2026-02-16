@@ -1,42 +1,48 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, Suspense } from 'react';
 import { usePromptGenerator } from './hooks/usePromptGenerator';
-import { SparklesIcon, HistoryIcon, TrashIcon, PencilSquareIcon, TerminalIcon, ClipboardIcon, ClipboardCheckIcon, XCircleIcon } from './components/Icons';
+import { useHistory } from './hooks/useHistory';
+import { usePresets } from './hooks/usePresets';
+import { SparklesIcon, HistoryIcon, PencilSquareIcon, TerminalIcon, ClipboardIcon, ClipboardCheckIcon, XCircleIcon } from './components/Icons';
 import { Accordion } from './components/Accordion';
-import { AuthModal } from './components/AuthModal';
-import { SavePresetModal } from './components/SavePresetModal';
 import { Auth } from './components/Auth';
 import { InputPanel } from './components/InputPanel';
 import { OutputPanel } from './components/OutputPanel';
 import { HistoryPanel, HistoryActions } from './components/HistoryPanel';
-import { ProfileManagement } from './components/ProfileManagement';
 import { appTexts } from './data/texts';
 import { ThemeSwitcher } from './components/ThemeSwitcher';
 import { Toaster, toast } from 'react-hot-toast';
 
+// Code Splitting: Lazy load components that are not immediately visible or heavy
+const AuthModal = React.lazy(() => import('./components/AuthModal').then(module => ({ default: module.AuthModal })));
+const SavePresetModal = React.lazy(() => import('./components/SavePresetModal').then(module => ({ default: module.SavePresetModal })));
+const ProfileManagement = React.lazy(() => import('./components/ProfileManagement').then(module => ({ default: module.ProfileManagement })));
+
 type View = 'main' | 'profile';
+
+const LoadingFallback = () => <div className="p-4 flex justify-center"><svg className="animate-spin h-6 w-6 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>;
 
 const App: React.FC = () => {
   const promptGenerator = usePromptGenerator();
   const { 
     user, 
-    history, 
     isLoading,
     error,
     clearError,
-    clearHistory, 
-    selectedHistoryIds, 
     handleLoadPreset, 
-    handleDeletePreset, 
     handleClearFields,
     groupSelectedHistory,
     handleGenerateCompositePrompt,
-    deleteSelectedHistory,
     theme,
     setTheme,
     structuredPrompt,
     handleCopyToClipboard,
     isCopied
   } = promptGenerator;
+
+  // Independent hooks for App actions
+  const { deleteSelectedHistory, clearHistory, history, selectedHistoryIds } = useHistory();
+  const { removePreset } = usePresets();
   
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSavePresetModalOpen, setIsSavePresetModalOpen] = useState(false);
@@ -74,9 +80,9 @@ const App: React.FC = () => {
     }
   }
 
-  const onDeletePreset = () => {
+  const onDeletePreset = async () => {
     if(selectedPreset) {
-        handleDeletePreset(selectedPreset);
+        await removePreset(selectedPreset);
         setSelectedPreset('');
         toast.success("Preset removido.");
     }
@@ -175,7 +181,8 @@ const App: React.FC = () => {
                                 )}
                             </button>
                         </div>
-                        <OutputPanel promptGenerator={promptGenerator} />
+                        {/* Optimized Prop Passing for Memoization */}
+                        <OutputPanel structuredPrompt={structuredPrompt} isLoading={isLoading} />
                     </div>
                 </div>
                 
@@ -184,8 +191,8 @@ const App: React.FC = () => {
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"><HistoryIcon className="w-6 h-6" /> {appTexts.historyTitle}</h2>
                         {selectedHistoryIds.length > 0 
-                            ? <HistoryActions {...promptGenerator} /> 
-                            : (history.length > 0 && user && <button onClick={clearHistory} className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1"><XCircleIcon className="w-4 h-4" /> Limpar Histórico Completo</button>)}
+                            ? <HistoryActions groupSelectedHistory={groupSelectedHistory} handleGenerateCompositePrompt={handleGenerateCompositePrompt} deleteSelectedHistory={deleteSelectedHistory} /> 
+                            : (history && history.length > 0 && user && <button onClick={() => clearHistory()} className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1"><XCircleIcon className="w-4 h-4" /> Limpar Histórico Completo</button>)}
                     </div>
                     <HistoryPanel promptGenerator={promptGenerator} />
                 </div>
@@ -231,7 +238,7 @@ const App: React.FC = () => {
                         </button>
                     }
                 >
-                    <OutputPanel promptGenerator={promptGenerator} />
+                    <OutputPanel structuredPrompt={structuredPrompt} isLoading={isLoading} />
                 </Accordion>
                 <Accordion
                     title={appTexts.historyPanelTitle}
@@ -239,8 +246,8 @@ const App: React.FC = () => {
                     isOpen={promptGenerator.activePanel === 'history'}
                     onToggle={() => promptGenerator.setActivePanel('history')}
                     headerContent={selectedHistoryIds.length > 0 
-                        ? <HistoryActions {...promptGenerator} /> 
-                        : (history.length > 0 && user && <button onClick={(e) => { e.stopPropagation(); clearHistory(); }} className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1"><XCircleIcon className="w-4 h-4" /> Limpar Histórico Completo</button>)}
+                        ? <HistoryActions groupSelectedHistory={groupSelectedHistory} handleGenerateCompositePrompt={handleGenerateCompositePrompt} deleteSelectedHistory={deleteSelectedHistory} /> 
+                        : (history && history.length > 0 && user && <button onClick={(e) => { e.stopPropagation(); clearHistory(); }} className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1"><XCircleIcon className="w-4 h-4" /> Limpar Histórico Completo</button>)}
                 >
                     <HistoryPanel promptGenerator={promptGenerator} />
                 </Accordion>
@@ -248,12 +255,18 @@ const App: React.FC = () => {
         </>
       ) : (
           <main className="w-full max-w-screen-2xl flex-grow">
-            {user && <ProfileManagement promptGenerator={promptGenerator} onBack={() => setView('main')} />}
+            {user && (
+                <Suspense fallback={<LoadingFallback />}>
+                    <ProfileManagement promptGenerator={promptGenerator} onBack={() => setView('main')} />
+                </Suspense>
+            )}
           </main>
       )}
       
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-      <SavePresetModal isOpen={isSavePresetModalOpen} onClose={() => setIsSavePresetModalOpen(false)} onSave={promptGenerator.handleSavePreset} />
+      <Suspense fallback={null}>
+        {isAuthModalOpen && <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />}
+        {isSavePresetModalOpen && <SavePresetModal isOpen={isSavePresetModalOpen} onClose={() => setIsSavePresetModalOpen(false)} onSave={promptGenerator.handleSavePreset} />}
+      </Suspense>
     </div>
   );
 };

@@ -1,10 +1,15 @@
 
 import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSettings, saveSettings, Theme } from '../repositories/settingsRepository';
 import { DetailLevel, OutputFormat, PromptMode } from '../models/Prompt';
-import type { User } from '@supabase/supabase-js';
+import { useAuth } from './useAuth';
 
-export const useSettings = (user: User | null) => {
+export const useSettings = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Local State (Immediate UI feedback)
   const [isAdvancedMode, setIsAdvancedMode] = useState<boolean>(false);
   const [includeComments, setIncludeComments] = useState<boolean>(true);
   const [detailLevel, setDetailLevel] = useState<DetailLevel>('detalhado');
@@ -14,82 +19,59 @@ export const useSettings = (user: User | null) => {
   const [theme, setTheme] = useState<Theme>('system');
   const [promptMode, setPromptMode] = useState<PromptMode>('geral');
 
-  // Load settings on login or from localStorage
-  useEffect(() => {
-    const loadSettings = async () => {
-      if (user) {
-        const settings = await getSettings(user.id);
-        if (settings) {
-          setIsAdvancedMode(settings.isAdvancedMode);
-          setIncludeComments(settings.includeComments);
-          setDetailLevel(settings.detailLevel);
-          setOutputFormat(settings.outputFormat);
-          setTemperature(settings.temperature ?? 0.8);
-          setTopK(settings.topK ?? 64);
-          setTheme(settings.theme ?? 'system');
-        }
-      } else {
-        const storedTheme = localStorage.getItem('theme') as Theme | null;
-        if (storedTheme) {
-            setTheme(storedTheme);
-        }
-      }
-    };
-    loadSettings();
-  }, [user]);
+  // Fetch Settings from DB
+  const { data: remoteSettings } = useQuery({
+    queryKey: ['settings', user?.id],
+    queryFn: () => getSettings(user!.id),
+    enabled: !!user,
+    staleTime: Infinity, // Settings rarely change externally
+  });
 
-  // Save settings on change (Debounced slightly by React batching, but functionally direct)
+  // Sync Remote -> Local
+  useEffect(() => {
+    if (remoteSettings) {
+      setIsAdvancedMode(remoteSettings.isAdvancedMode);
+      setIncludeComments(remoteSettings.includeComments);
+      setDetailLevel(remoteSettings.detailLevel);
+      setOutputFormat(remoteSettings.outputFormat);
+      setTemperature(remoteSettings.temperature ?? 0.8);
+      setTopK(remoteSettings.topK ?? 64);
+      setTheme(remoteSettings.theme ?? 'system');
+    } else if (!user) {
+        // Load theme from local storage if not logged in
+        const storedTheme = localStorage.getItem('theme') as Theme | null;
+        if (storedTheme) setTheme(storedTheme);
+    }
+  }, [remoteSettings, user]);
+
+  // Sync Local -> Remote (Debounced via Mutation)
+  const saveMutation = useMutation({
+    mutationFn: (newSettings: any) => saveSettings(user!.id, newSettings),
+  });
+
+  // Effect to trigger save
   useEffect(() => {
     if (user) {
-      saveSettings(user.id, { isAdvancedMode, includeComments, detailLevel, outputFormat, temperature, topK, theme });
+      saveMutation.mutate({ isAdvancedMode, includeComments, detailLevel, outputFormat, temperature, topK, theme });
     }
   }, [user, isAdvancedMode, includeComments, detailLevel, outputFormat, temperature, topK, theme]);
 
-  // Apply theme Logic
+  // Apply Theme Logic
   useEffect(() => {
     const root = window.document.documentElement;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
     const applyTheme = () => {
         const isSystemDark = mediaQuery.matches;
         const shouldBeDark = theme === 'dark' || (theme === 'system' && isSystemDark);
-
-        if (shouldBeDark) {
-            root.classList.add('dark');
-        } else {
-            root.classList.remove('dark');
-        }
-        
+        root.classList.toggle('dark', shouldBeDark);
         localStorage.setItem('theme', theme);
     };
-
-    // Apply immediately when theme state changes
     applyTheme();
-
-    // Setup listener for system changes ONLY if we are in system mode
-    const handleSystemChange = () => {
-        if (theme === 'system') {
-            applyTheme();
-        }
-    };
-
-    mediaQuery.addEventListener('change', handleSystemChange);
-    
-    return () => {
-        mediaQuery.removeEventListener('change', handleSystemChange);
-    };
+    mediaQuery.addEventListener('change', applyTheme);
+    return () => mediaQuery.removeEventListener('change', applyTheme);
   }, [theme]);
 
-  // Helper to bulk update settings (e.g. from preset)
-  const applyPresetSettings = (settings: {
-      promptMode: PromptMode;
-      detailLevel: DetailLevel;
-      outputFormat: OutputFormat;
-      includeComments: boolean;
-      isAdvancedMode: boolean;
-      temperature: number;
-      topK: number;
-  }) => {
+  const applyPresetSettings = (settings: any) => {
       setPromptMode(settings.promptMode);
       setDetailLevel(settings.detailLevel);
       setOutputFormat(settings.outputFormat);

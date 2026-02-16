@@ -17,10 +17,9 @@ interface InputPanelProps {
     selectedPreset: string;
     onSelectedPresetChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
     onDeletePreset: () => void;
-    onClearFields: () => void;
 }
 
-export const InputPanel: React.FC<Omit<InputPanelProps, 'onClearFields'>> = ({
+export const InputPanel: React.FC<InputPanelProps> = ({
     promptGenerator,
     onSavePresetClick,
     selectedPreset,
@@ -39,13 +38,9 @@ export const InputPanel: React.FC<Omit<InputPanelProps, 'onClearFields'>> = ({
         outputFormat, setOutputFormat,
         handleGeneratePrompt,
         handleOptimizeInput,
-        presets,
         temperature, setTemperature,
         topK, setTopK,
-        snippets,
-        insertSnippet,
-        handleDeleteSnippet,
-        handleSaveSnippet
+        insertSnippet
     } = promptGenerator;
     
     const [modeListRef] = useAutoAnimate();
@@ -86,14 +81,8 @@ export const InputPanel: React.FC<Omit<InputPanelProps, 'onClearFields'>> = ({
             <div className="mt-6 space-y-4">
                 {user && (
                     <>
-                        <SnippetLibrary 
-                            snippets={snippets}
-                            onInsertSnippet={insertSnippet}
-                            onDeleteSnippet={handleDeleteSnippet}
-                            onSaveSnippet={handleSaveSnippet}
-                        />
+                        <SnippetLibrary onInsertSnippet={insertSnippet} />
                         <PresetManager 
-                            presets={presets}
                             selectedPresetId={selectedPreset}
                             onSelectPreset={onSelectedPresetChange}
                             onDeletePreset={onDeletePreset}

@@ -2,15 +2,13 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { usePromptGenerator } from '../hooks/usePromptGenerator';
 
 type OutputPanelProps = {
-    promptGenerator: Pick<ReturnType<typeof usePromptGenerator>, 'structuredPrompt' | 'isLoading' | 'error'>;
+    structuredPrompt: string;
+    isLoading: boolean;
 };
 
-export const OutputPanel: React.FC<OutputPanelProps> = ({ promptGenerator }) => {
-    const { structuredPrompt, isLoading } = promptGenerator;
-    
+export const OutputPanel = React.memo(({ structuredPrompt, isLoading }: OutputPanelProps) => {
     return (
         <div className="w-full h-[50vh] sm:h-0 sm:flex-grow bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-lg p-4 overflow-y-auto relative scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
             {isLoading ? (
@@ -35,4 +33,6 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({ promptGenerator }) => 
             )}
         </div>
     );
-};
+});
+
+OutputPanel.displayName = 'OutputPanel';
