@@ -93,27 +93,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             onClose={onClose} 
             title={getTitle()}
         >
-            <p className="text-slate-400 text-center mb-6">
+            <p className="text-slate-600 dark:text-slate-400 text-center mb-6">
                 {getDescription()}
             </p>
 
             <form onSubmit={handleAuthAction}>
                 <div className={`grid grid-cols-1 ${!isResetView ? 'sm:grid-cols-2' : ''} gap-4`}>
                     <div className={isResetView ? 'w-full' : ''}>
-                        <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                        <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email</label>
                         <input 
                             type="email" 
                             id="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-300 placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-slate-300 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                             placeholder="seu@email.com"
                         />
                     </div>
                     {!isResetView && (
                         <div>
-                            <label htmlFor="password"  className="block text-sm font-medium text-slate-300 mb-2">Senha</label>
+                            <label htmlFor="password"  className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Senha</label>
                             <input 
                                 type="password" 
                                 id="password"
@@ -121,15 +121,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                                 minLength={6}
-                                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-300 placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-slate-300 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                                 placeholder="••••••••"
                             />
                         </div>
                     )}
                 </div>
 
-                {error && <p className="mt-4 text-sm text-center text-red-400">{error}</p>}
-                {message && <p className="mt-4 text-sm text-center text-green-400">{message}</p>}
+                {error && <p className="mt-4 text-sm text-center text-red-500 dark:text-red-400 font-medium">{error}</p>}
+                {message && <p className="mt-4 text-sm text-center text-green-600 dark:text-green-400 font-medium">{message}</p>}
 
                 <div className="mt-6 space-y-3">
                     <button 
@@ -152,7 +152,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                                 setError(null);
                                 setMessage(null);
                             }}
-                            className="w-full text-sm text-slate-500 hover:text-slate-300 transition-colors"
+                            className="w-full text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
                         >
                             Esqueci minha senha?
                         </button>
@@ -163,7 +163,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             <div className="mt-6 text-center">
                 <button 
                     onClick={toggleView}
-                    className="text-sm text-purple-400 hover:text-purple-300 font-medium transition"
+                    className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium transition"
                 >
                     {isResetView 
                         ? 'Voltar para o Login' 

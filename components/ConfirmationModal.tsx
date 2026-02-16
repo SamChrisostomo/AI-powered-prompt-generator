@@ -28,7 +28,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={title}>
-            <div className="text-slate-400 text-center mb-6 space-y-2">
+            <div className="text-slate-600 dark:text-slate-400 text-center mb-6 space-y-2">
                 {message}
             </div>
             
@@ -36,7 +36,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 <button 
                     onClick={onClose}
                     disabled={loading}
-                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
+                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold rounded-lg transition-colors disabled:opacity-50"
                 >
                     {cancelText}
                 </button>

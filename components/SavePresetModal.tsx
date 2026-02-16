@@ -32,19 +32,19 @@ export const SavePresetModal: React.FC<SavePresetModalProps> = ({ isOpen, onClos
         <Modal isOpen={isOpen} onClose={onClose} title="Salvar Preset" size="sm">
              <form onSubmit={handleSave}>
                 <div>
-                    <label htmlFor="preset-name" className="block text-sm font-medium text-slate-300 mb-2">Nome do Preset</label>
+                    <label htmlFor="preset-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nome do Preset</label>
                     <input
                         type="text"
                         id="preset-name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
-                        className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-300 placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-slate-300 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                         placeholder="Ex: Componente React"
                     />
                 </div>
                 <div className="mt-6 flex justify-end gap-3">
-                    <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg transition-colors">
+                    <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold rounded-lg transition-colors">
                         Cancelar
                     </button>
                     <button 

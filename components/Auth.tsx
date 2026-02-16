@@ -52,30 +52,30 @@ export const Auth: React.FC<AuthProps> = ({ user, onLoginClick, onProfileClick }
                     {avatarUrl ? (
                         <img src={avatarUrl} alt="User avatar" className="w-10 h-10 rounded-full ring-2 ring-purple-400/50" />
                     ) : (
-                        <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-lg ring-2 ring-purple-400">
+                        <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-lg ring-2 ring-purple-400 hover:bg-purple-700 transition-colors shadow-sm">
                             {userInitial?.toUpperCase()}
                         </div>
                     )}
                 </button>
                 {isDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-slate-800 rounded-lg shadow-2xl ring-1 ring-white/10 z-50 py-1">
-                        <div className="px-4 py-2 border-b border-slate-700">
-                            <p className="text-sm text-slate-300 font-semibold truncate">{user.user_metadata?.full_name || 'Usuário'}</p>
-                            <p className="text-xs text-slate-400 truncate">{user.email}</p>
+                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-2xl ring-1 ring-slate-200 dark:ring-white/10 z-50 py-1 transition-colors">
+                        <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700">
+                            <p className="text-sm text-slate-900 dark:text-slate-300 font-semibold truncate">{user.user_metadata?.full_name || 'Usuário'}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
                         </div>
                         <div className="py-1">
                             <button
                                 onClick={handleProfileClick}
-                                className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700/80 transition-colors"
+                                className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-colors"
                             >
-                                <IdentificationIcon className="w-5 h-5" />
+                                <IdentificationIcon className="w-5 h-5 text-slate-400 dark:text-slate-500" />
                                 Gerenciar Perfil
                             </button>
                             <button
                                 onClick={handleLogout}
-                                className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700/80 transition-colors"
+                                className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-colors"
                             >
-                                <ArrowLeftOnRectangleIcon className="w-5 h-5" />
+                                <ArrowLeftOnRectangleIcon className="w-5 h-5 text-slate-400 dark:text-slate-500" />
                                 {appTexts.logoutButton}
                             </button>
                         </div>
@@ -86,7 +86,7 @@ export const Auth: React.FC<AuthProps> = ({ user, onLoginClick, onProfileClick }
     }
 
     return (
-        <button onClick={onLoginClick} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+        <button onClick={onLoginClick} className="bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-colors shadow-sm">
             {appTexts.loginButton}
         </button>
     );

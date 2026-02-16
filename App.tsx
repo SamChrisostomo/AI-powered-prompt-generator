@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePromptGenerator } from './hooks/usePromptGenerator';
-import { SparklesIcon, HistoryIcon, TrashIcon, PencilSquareIcon, TerminalIcon } from './components/Icons';
+import { SparklesIcon, HistoryIcon, TrashIcon, PencilSquareIcon, TerminalIcon, ClipboardIcon, ClipboardCheckIcon } from './components/Icons';
 import { Accordion } from './components/Accordion';
 import { AuthModal } from './components/AuthModal';
 import { SavePresetModal } from './components/SavePresetModal';
@@ -33,7 +33,10 @@ const App: React.FC = () => {
     handleGenerateCompositePrompt,
     deleteSelectedHistory,
     theme,
-    setTheme
+    setTheme,
+    structuredPrompt,
+    handleCopyToClipboard,
+    isCopied
   } = promptGenerator;
   
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -119,6 +122,30 @@ const App: React.FC = () => {
                     <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-6 flex flex-col relative shadow-2xl shadow-slate-950/50 ring-1 ring-slate-200 dark:ring-white/10 flex-grow">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{appTexts.structuredPromptTitle}</h2>
+                            <button
+                                onClick={handleCopyToClipboard}
+                                disabled={!structuredPrompt || isLoading}
+                                className={`
+                                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 border
+                                    ${isCopied 
+                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700' 
+                                        : 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-slate-700'
+                                    }
+                                    disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:dark:bg-slate-800 disabled:text-slate-400 disabled:border-slate-200 disabled:dark:border-slate-700
+                                `}
+                            >
+                                {isCopied ? (
+                                    <>
+                                        <ClipboardCheckIcon className="w-5 h-5" />
+                                        Copiado!
+                                    </>
+                                ) : (
+                                    <>
+                                        <ClipboardIcon className="w-5 h-5" />
+                                        Copiar prompt
+                                    </>
+                                )}
+                            </button>
                         </div>
                         <OutputPanel promptGenerator={promptGenerator} />
                     </div>
@@ -158,6 +185,23 @@ const App: React.FC = () => {
                     icon={<TerminalIcon className="w-6 h-6"/>}
                     isOpen={promptGenerator.activePanel === 'output'}
                     onToggle={() => promptGenerator.setActivePanel('output')}
+                    headerContent={
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleCopyToClipboard(); }}
+                            disabled={!structuredPrompt || isLoading}
+                            className={`
+                                p-2 rounded-md transition-colors border
+                                ${isCopied 
+                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700' 
+                                    : 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-slate-700'
+                                }
+                                disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-transparent disabled:text-slate-400 disabled:border-transparent
+                            `}
+                            title="Copiar prompt"
+                        >
+                            {isCopied ? <ClipboardCheckIcon className="w-5 h-5" /> : <ClipboardIcon className="w-5 h-5" />}
+                        </button>
+                    }
                 >
                     <OutputPanel promptGenerator={promptGenerator} />
                 </Accordion>

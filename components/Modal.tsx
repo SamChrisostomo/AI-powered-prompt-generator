@@ -39,20 +39,20 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
 
     return (
         <div 
-            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity"
             onClick={onClose}
             aria-modal="true"
             role="dialog"
         >
             <div 
-                className={`bg-slate-800 w-full rounded-2xl shadow-2xl p-8 relative ring-1 ring-white/10 ${sizeClasses[size]}`}
+                className={`bg-white dark:bg-slate-800 w-full rounded-2xl shadow-2xl p-8 relative ring-1 ring-slate-200 dark:ring-white/10 transition-colors duration-300 ${sizeClasses[size]}`}
                 onClick={(e) => e.stopPropagation()}
             >
-                <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors" aria-label="Fechar modal">
+                <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-white transition-colors" aria-label="Fechar modal">
                     <CloseIcon className="w-6 h-6" />
                 </button>
                 
-                <h2 className="text-2xl sm:text-3xl font-bold text-center text-white mb-4">
+                <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 dark:text-white mb-4">
                     {title}
                 </h2>
                 
