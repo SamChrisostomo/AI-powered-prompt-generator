@@ -12,7 +12,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({ promptGenerator }) => 
     const { structuredPrompt, isLoading } = promptGenerator;
     
     return (
-        <div className="w-full h-[60vh] sm:h-0 sm:flex-grow bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-lg p-4 overflow-y-auto relative">
+        <div className="w-full h-[50vh] sm:h-0 sm:flex-grow bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-lg p-4 overflow-y-auto relative scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
             {isLoading ? (
                 <div className="animate-pulse space-y-4">
                     <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
@@ -29,7 +29,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({ promptGenerator }) => 
                     </ReactMarkdown>
                 </div>
             ) : (
-                <div className="text-slate-400 dark:text-slate-500 flex flex-col items-center justify-center h-full">
+                <div className="text-slate-400 dark:text-slate-500 flex flex-col items-center justify-center h-full text-center p-4">
                     <p>Seu prompt gerado aparecerá aqui...</p>
                 </div>
             )}
